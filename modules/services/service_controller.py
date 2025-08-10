@@ -3,7 +3,7 @@ from . import service_model
 from .add_service_view import AddServiceView
 from .update_service_view import UpdateServiceView
 from modules.clients import client_model
-import product_model # Necesitamos el modelo de productos para la búsqueda
+import product_model
 
 class ServiceController:
     def __init__(self, main_app_instance):
@@ -37,14 +37,14 @@ class ServiceController:
             messagebox.showerror("Error", "No se pudo registrar la orden.", parent=self.add_window)
 
     def show_update_service_window(self):
-        """Muestra la ventana para actualizar un servicio existente."""
         if self.update_window and self.update_window.winfo_exists():
             self.update_window.focus(); return
         
-        self.current_service_id = self.services_view.get_selected_service_id()
-        if not self.current_service_id:
-            messagebox.showwarning("Sin Selección", "Seleccione un servicio para actualizar.", parent=self.main_app)
+        service_id = self.services_view.get_selected_service_id()
+        if not service_id:
+            messagebox.showwarning("Sin Selección", "Seleccione un servicio para gestionar.", parent=self.main_app)
             return
+        self.current_service_id = int(service_id)
 
         service_data = service_model.get_by_id(self.current_service_id)
         if not service_data:
@@ -56,7 +56,6 @@ class ServiceController:
         self.refresh_service_details()
 
     def refresh_service_details(self):
-        """Recarga los items y el costo total en la ventana de actualización."""
         if not (self.update_window and self.update_window.winfo_exists()): return
         
         service_data = service_model.get_by_id(self.current_service_id)
@@ -70,7 +69,6 @@ class ServiceController:
         self.update_window.update_total_cost(total_cost)
 
     def search_products_for_service(self, search_term):
-        """Busca productos y actualiza la lista en la ventana de actualización de servicio."""
         if self.update_window and self.update_window.winfo_exists():
             products = product_model.search_products(search_term)
             self.update_window.update_search_results(products)
@@ -82,16 +80,22 @@ class ServiceController:
 
     def add_item_to_service(self, product_id, quantity):
         product = product_model.get_by_id(product_id)
+        if not product:
+            messagebox.showerror("Error", "Producto no encontrado.", parent=self.update_window)
+            return
         if service_model.add_item_to_service(self.current_service_id, product, quantity):
             self.refresh_service_details()
+            self.update_window.search_var.set("") # Limpiar búsqueda
+            self.search_products_for_service("")
         else:
             messagebox.showerror("Error", "No se pudo añadir el repuesto. Verifique el stock.", parent=self.update_window)
 
     def remove_item_from_service(self, detail_id):
         items = service_model.get_service_items(self.current_service_id)
-        # BUG FIX: detail_id is a string from the treeview, needs to be int for comparison
         item_to_remove = next((i for i in items if i['id'] == int(detail_id)), None)
-        if not item_to_remove: return
+        if not item_to_remove:
+            messagebox.showerror("Error", "No se encontró el repuesto en la lista.", parent=self.update_window)
+            return
 
         product_id = item_to_remove['id_producto']
         quantity = item_to_remove['cantidad']
@@ -116,12 +120,4 @@ class ServiceController:
         if self.update_window: self.update_window.destroy(); self.update_window = None
 
     def show_service_details_popup(self):
-        """Muestra una ventana emergente con todos los detalles del servicio."""
-        service_id = self.services_view.get_selected_service_id()
-        if not service_id:
-            messagebox.showwarning("Sin Selección", "Seleccione un servicio de la lista para ver sus detalles.", parent=self.main_app)
-            return
-
-        # Reutilizamos la lógica de la ventana de actualización, pero en modo "solo lectura"
-        # En una futura mejora, se podría crear una vista de detalles específica.
         self.show_update_service_window()
