@@ -16,6 +16,7 @@ from modules.clients.client_view import ClientsView
 from modules.services.service_view import ServicesView
 from modules.expenses.expense_view import ExpensesView
 from modules.suppliers.supplier_view import SupplierView
+from modules.purchases.purchase_view import PurchaseView
 
 # Controladores
 from product_controller import ProductController
@@ -25,6 +26,7 @@ from modules.clients.client_controller import ClientController
 from modules.services.service_controller import ServiceController
 from modules.expenses.expense_controller import ExpenseController
 from modules.suppliers.supplier_controller import SupplierController
+from modules.purchases.purchase_controller import PurchaseController
 
 
 class LoginWindow(tk.Tk):
@@ -112,6 +114,7 @@ class App(tk.Tk):
         self.views['services'] = ServicesView(self.main_content_frame)
         self.views['expenses'] = ExpensesView(self.main_content_frame)
         self.views['suppliers'] = SupplierView(self.main_content_frame)
+        self.views['purchases'] = PurchaseView(self.main_content_frame)
 
     def initialize_controllers(self):
         self.controllers['products'] = ProductController(self)
@@ -129,6 +132,9 @@ class App(tk.Tk):
         self.controllers['expenses'] = expense_controller
         supplier_controller = SupplierController(self)
         self.controllers['suppliers'] = supplier_controller
+        purchase_controller = PurchaseController(self)
+        purchase_controller.set_view(self.views['purchases'])
+        self.controllers['purchases'] = purchase_controller
 
     def show_view(self, view_name):
         for view in self.views.values():
@@ -162,9 +168,13 @@ class App(tk.Tk):
         self.controllers['expenses'].load_all_expenses()
 
     def show_suppliers_view(self):
-        """Muestra la vista de proveedores y carga los datos."""
         self.show_view('suppliers')
         self.controllers['suppliers'].load_all_suppliers()
+    
+    def show_purchases_view(self):
+        """Muestra la vista de compras y resetea su estado."""
+        self.show_view('purchases')
+        self.controllers['purchases'].clear_purchase(confirm=False)
 
 if __name__ == "__main__":
     login_window = LoginWindow()
