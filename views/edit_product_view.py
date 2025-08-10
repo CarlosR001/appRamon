@@ -85,12 +85,11 @@ class EditProductView(tk.Toplevel):
             
             updated_data['id_categoria'] = cat_id
             
-            # Llama al método del controlador
-           self.parent.controllers['products'].update_existing_product(self.product_data['id'], updated_data)
-
+            # Llamada al controlador corregida
+            self.parent.controllers['products'].update_existing_product(self.product_data['id'], updated_data)
             self.destroy()
 
-        except ValueError:
+        except (ValueError, tk.TclError):
             messagebox.showerror("Error de Tipo de Dato", "Por favor, ingrese un número válido en los campos de precio y stock.", parent=self)
         except Exception as e:
             messagebox.showerror("Error Inesperado", f"Ocurrió un error: {e}", parent=self)
