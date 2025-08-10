@@ -39,7 +39,8 @@ class AddEditClientView(tk.Toplevel):
         save_button = ttk.Button(button_frame, text=save_text, command=self.save, style="Accent.TButton")
         save_button.pack(side="left", padx=10)
 
-        cancel_button = ttk.Button(button_frame, text="Cancelar", command=self.destroy)
+        # El botón cancelar ahora llama al controlador para que cierre la ventana
+        cancel_button = ttk.Button(button_frame, text="Cancelar", command=self.controller.close_add_edit_window)
         cancel_button.pack(side="left", padx=10)
 
         # Si estamos en modo edición, cargamos los datos
@@ -53,7 +54,7 @@ class AddEditClientView(tk.Toplevel):
         self.entries["Dirección:"].insert(0, self.client_data.get('direccion', ''))
 
     def save(self):
-        """Recopila los datos y los envía al controlador."""
+        """Recopila los datos y los envía al controlador. No cierra la ventana."""
         data = {
             'nombre': self.entries["Nombre:"].get(),
             'telefono': self.entries["Teléfono:"].get(),
@@ -69,5 +70,3 @@ class AddEditClientView(tk.Toplevel):
             self.controller.update_client(self.client_data['id'], data)
         else:
             self.controller.add_client(data)
-        
-        self.destroy()
