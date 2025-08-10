@@ -1,18 +1,44 @@
 import mysql.connector
 from mysql.connector import Error
 import configparser
+import os
+import sys
+
+def get_config_path():
+    """
+    Determina la ruta correcta para config.ini, ya sea en desarrollo o empaquetado.
+    """
+    if getattr(sys, 'frozen', False):
+        # Si la aplicación está empaquetada (frozen) por PyInstaller
+        application_path = sys._MEIPASS
+    else:
+        # Si se está ejecutando como un script normal
+        application_path = os.path.dirname(os.path.abspath(__file__))
+    
+    return os.path.join(application_path, 'config.ini')
 
 def get_db_connection():
     """
     Crea una conexión a la base de datos MySQL usando los datos de config.ini.
     """
     config = configparser.ConfigParser()
+    config_path = get_config_path()
+
     # Usar un bloque try-except por si config.ini no existe
     try:
-        config.read('config.ini')
+        if not os.path.exists(config_path):
+            raise FileNotFoundError(f"El archivo de configuración no se encontró en: {config_path}")
+        
+        config.read(config_path)
         db_config = config['database']
     except Exception as e:
-        print(f"Error al leer config.ini: {e}")
+        print(f"Error al leer el archivo de configuración: {e}")
+        # En un entorno empaquetado, puede ser útil mostrar este error en un cuadro de diálogo
+        # import tkinter as tk
+        # from tkinter import messagebox
+        # root = tk.Tk()
+        # root.withdraw()
+        # messagebox.showerror("Error de Configuración", f"No se pudo leer config.ini: {e}")
         return None
 
     try:
@@ -26,5 +52,10 @@ def get_db_connection():
             return conn
     except Error as e:
         print(f"Error al conectar a MySQL: {e}")
+        # import tkinter as tk
+        # from tkinter import messagebox
+        # root = tk.Tk()
+        # root.withdraw()
+        # messagebox.showerror("Error de Base de Datos", f"No se pudo conectar a MySQL: {e}")
         return None
     return None
