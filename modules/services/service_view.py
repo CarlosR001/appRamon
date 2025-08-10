@@ -17,8 +17,7 @@ class ServicesView(ttk.Frame):
     def set_controller(self, controller):
         self.controller = controller
         self.add_button.config(command=self.controller.show_add_service_window)
-        # Los otros botones se conectarán en la Fase 2
-        # self.edit_button.config(command=self.controller.show_edit_service_window)
+        self.edit_button.config(command=self.controller.show_update_service_window)
         # self.details_button.config(command=self.controller.show_service_details)
 
     def create_header(self):
@@ -26,7 +25,6 @@ class ServicesView(ttk.Frame):
         header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
         title = ttk.Label(header_frame, text="Gestión de Servicios y Reparaciones", font=("Segoe UI", 16, "bold"))
         title.pack(side="left")
-        # Aquí podrían ir filtros en el futuro (por estado, por cliente, etc.)
 
     def create_services_treeview(self):
         tree_frame = ttk.Frame(self)
@@ -40,7 +38,6 @@ class ServicesView(ttk.Frame):
         self.tree.heading("equipo", text="Equipo")
         self.tree.heading("estado", text="Estado")
         self.tree.heading("fecha", text="Fecha Recepción")
-
         self.tree.column("id", width=80, anchor=tk.CENTER)
         self.tree.column("cliente", width=200)
         self.tree.column("equipo", width=250)
@@ -59,11 +56,18 @@ class ServicesView(ttk.Frame):
         self.add_button = ttk.Button(button_frame, text="Registrar Nuevo Servicio", style="Accent.TButton")
         self.add_button.pack(side="left", padx=(0, 5))
 
-        self.edit_button = ttk.Button(button_frame, text="Actualizar Estado", state="disabled")
+        self.edit_button = ttk.Button(button_frame, text="Actualizar Estado")
         self.edit_button.pack(side="left", padx=5)
 
         self.details_button = ttk.Button(button_frame, text="Ver Detalles", state="disabled")
         self.details_button.pack(side="left", padx=5)
+
+    def get_selected_service_id(self):
+        """Devuelve el ID del servicio seleccionado en la tabla."""
+        selection = self.tree.selection()
+        if selection:
+            return self.tree.item(selection[0], "values")[0]
+        return None
 
     def clear_tree(self):
         self.tree.delete(*self.tree.get_children())
