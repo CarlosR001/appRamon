@@ -18,6 +18,7 @@ from modules.expenses.expense_view import ExpensesView
 from modules.suppliers.supplier_view import SupplierView
 from modules.purchases.purchase_view import PurchaseView
 from modules.users.user_view import UserView
+from modules.dashboard.dashboard_view import DashboardView
 
 # Controladores
 from product_controller import ProductController
@@ -29,6 +30,7 @@ from modules.expenses.expense_controller import ExpenseController
 from modules.suppliers.supplier_controller import SupplierController
 from modules.purchases.purchase_controller import PurchaseController
 from modules.users.user_controller import UserController
+from modules.dashboard.dashboard_controller import DashboardController
 
 
 class LoginWindow(tk.Tk):
@@ -99,7 +101,7 @@ class App(tk.Tk):
         self.controllers = {}
         self.create_views()
         self.initialize_controllers()
-        self.show_sales_view()
+        self.show_dashboard_view() # Iniciar en el Dashboard
 
     def create_views(self):
         self.navigation_view = NavigationView(self, self)
@@ -109,6 +111,7 @@ class App(tk.Tk):
         self.main_content_frame.grid_rowconfigure(0, weight=1)
         self.main_content_frame.grid_columnconfigure(0, weight=1)
         
+        self.views['dashboard'] = DashboardView(self.main_content_frame)
         self.views['inventory'] = ProductsView(self.main_content_frame, self.user_role)
         self.views['sales'] = SalesView(self.main_content_frame)
         self.views['reports'] = ReportsView(self.main_content_frame)
@@ -120,6 +123,7 @@ class App(tk.Tk):
         self.views['users'] = UserView(self.main_content_frame)
 
     def initialize_controllers(self):
+        self.controllers['dashboard'] = DashboardController(self)
         self.controllers['products'] = ProductController(self)
         sales_controller = SalesController(self)
         sales_controller.set_view(self.views['sales'])
@@ -147,6 +151,11 @@ class App(tk.Tk):
         view_to_show = self.views.get(view_name)
         if view_to_show:
             view_to_show.grid(row=0, column=0, sticky="nsew")
+
+    def show_dashboard_view(self):
+        """Muestra el dashboard y refresca sus datos."""
+        self.show_view('dashboard')
+        self.controllers['dashboard'].load_data()
 
     def show_inventory_view(self):
         self.show_view('inventory')
@@ -181,7 +190,6 @@ class App(tk.Tk):
         self.controllers['purchases'].clear_purchase(confirm=False)
 
     def show_users_view(self):
-        """Muestra la vista de gestión de usuarios y carga sus datos."""
         self.show_view('users')
         self.controllers['users'].load_initial_data()
 
