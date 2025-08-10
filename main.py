@@ -15,7 +15,7 @@ class LoginWindow(tk.Tk):
         super().__init__()
         sv_ttk.set_theme("dark") # Aplicar tema oscuro a la ventana de login
         self.title("Iniciar Sesión")
-        self.geometry("300x150")
+        self.geometry("300x180") # Aumentamos la altura para que quepa el botón
         self.resizable(False, False)
         self.create_widgets()
         self.center_window()
@@ -128,4 +128,3 @@ if __name__ == "__main__":
     # La aplicación principal (Login) ya inicializa el tema
     login_window = LoginWindow()
     login_window.mainloop()
-
