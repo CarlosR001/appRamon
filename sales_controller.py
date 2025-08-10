@@ -38,10 +38,9 @@ class SalesController:
             else:
                 messagebox.showwarning("Stock Insuficiente", "No hay más stock disponible para este producto.", parent=self.sales_view)
         else:
-            # CORRECCIÓN: Usar el modelo de productos para obtener datos frescos
-            product_data = p_model.search_products(str(product_id))
+            # CORRECCIÓN DEFINITIVA: Usar get_by_id para buscar por ID
+            product_data = p_model.get_by_id(product_id)
             if product_data:
-                product_data = product_data[0] # search_products devuelve una lista
                 if product_data['stock'] > 0:
                     self.cart[product_id] = {'data': product_data, 'qty': 1}
                 else:
@@ -52,7 +51,6 @@ class SalesController:
         self.update_cart_display()
 
     def update_cart_display(self):
-        """Refresca la tabla del carrito y el total de la venta."""
         if not self.sales_view: return
         tree = self.sales_view.cart_tree
         tree.delete(*tree.get_children())

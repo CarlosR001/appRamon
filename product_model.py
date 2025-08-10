@@ -1,9 +1,25 @@
 from database import get_db_connection
 from mysql.connector import Error
 
+def get_by_id(product_id):
+    """Recupera un producto específico por su ID."""
+    conn = get_db_connection()
+    if not conn:
+        return None
+    
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT * FROM productos WHERE id = %s", (product_id,))
+        return cursor.fetchone() # Devuelve un solo resultado o None
+    except Error as e:
+        print(f"Error al obtener producto por ID: {e}")
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
 def get_all_products():
     """Recupera todos los productos de la base de datos con sus categorías."""
-    # Esta función ahora puede ser un caso especial de search_products
     return search_products("")
 
 def search_products(search_term):
@@ -14,7 +30,6 @@ def search_products(search_term):
     
     products = []
     cursor = conn.cursor(dictionary=True)
-    # El término de búsqueda se formatea con '%' para buscar coincidencias parciales
     like_term = f"%{search_term}%"
     
     query = """
@@ -33,7 +48,6 @@ def search_products(search_term):
         cursor.close()
         conn.close()
     return products
-
 
 def add_product(data):
     """Añade un nuevo producto a la base de datos."""
