@@ -1,6 +1,23 @@
 from database import get_db_connection
 from mysql.connector import Error
 
+def get_by_id(client_id):
+    """Recupera un cliente específico por su ID."""
+    conn = get_db_connection()
+    if not conn:
+        return None
+    
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT * FROM clientes WHERE id = %s", (client_id,))
+        return cursor.fetchone() # Devuelve un solo resultado o None
+    except Error as e:
+        print(f"Error al obtener cliente por ID: {e}")
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
 def search(search_term):
     """Busca clientes por nombre o teléfono."""
     conn = get_db_connection()
@@ -40,7 +57,7 @@ def add(data):
         conn.commit()
         return True
     except Error as e:
-        print(f"Error al añadir cliente: {e}")
+        print(f"ERROR AL AÑADIR CLIENTE EN EL MODELO: {e}") # <<-- Mensaje de diagnóstico
         conn.rollback()
         return False
     finally:
