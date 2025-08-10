@@ -27,20 +27,12 @@ def get_daily_sales_summary():
         conn.close()
 
 def get_sales_details_for_date(sale_date_obj):
-    """
-    Recupera todas las ventas de una fecha específica con sus detalles.
-    """
+    """Recupera todas las ventas de una fecha específica con sus detalles."""
     conn = get_db_connection()
     if not conn: return []
-    
     cursor = conn.cursor(dictionary=True)
-    
     try:
-        # CORRECCIÓN: Convertir el objeto de fecha a un string YYYY-MM-DD
-        # Esto asegura que la consulta a MySQL sea siempre correcta.
         sale_date_str = sale_date_obj.strftime('%Y-%m-%d')
-
-        # 1. Obtener todas las ventas de esa fecha
         query_sales = """
             SELECT v.id, v.fecha, v.total, c.nombre as cliente_nombre
             FROM ventas v
@@ -50,11 +42,7 @@ def get_sales_details_for_date(sale_date_obj):
         """
         cursor.execute(query_sales, (sale_date_str,))
         sales = cursor.fetchall()
-
-        if not sales:
-            return []
-
-        # 2. Para cada venta, obtener sus productos
+        if not sales: return []
         query_items = """
             SELECT d.cantidad, d.precio_unitario, p.nombre as producto_nombre
             FROM detalle_ventas d
@@ -64,11 +52,37 @@ def get_sales_details_for_date(sale_date_obj):
         for sale in sales:
             cursor.execute(query_items, (sale['id'],))
             sale['items'] = cursor.fetchall()
-            
         return sales
-
     except Error as e:
         print(f"Error al obtener los detalles de ventas por fecha: {e}")
+        return []
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_sales_by_product():
+    """
+    Recupera un resumen de ventas agrupado por producto.
+    """
+    conn = get_db_connection()
+    if not conn: return []
+    cursor = conn.cursor(dictionary=True)
+    query = """
+        SELECT
+            p.nombre,
+            p.codigo,
+            SUM(dv.cantidad) as total_unidades_vendidas,
+            SUM(dv.cantidad * dv.precio_unitario) as total_ingresos
+        FROM detalle_ventas dv
+        JOIN productos p ON dv.id_producto = p.id
+        GROUP BY p.id, p.nombre, p.codigo
+        ORDER BY total_unidades_vendidas DESC;
+    """
+    try:
+        cursor.execute(query)
+        return cursor.fetchall()
+    except Error as e:
+        print(f"Error al obtener el resumen de ventas por producto: {e}")
         return []
     finally:
         cursor.close()
