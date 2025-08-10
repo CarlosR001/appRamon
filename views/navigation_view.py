@@ -4,7 +4,7 @@ from tkinter import ttk
 class NavigationView(ttk.Frame):
     def __init__(self, parent, app_controller):
         super().__init__(parent, style="Card.TFrame", padding=10)
-        self.app_controller = app_controller # Renombramos para mayor claridad
+        self.app_controller = app_controller
 
         self.columnconfigure(0, weight=1)
 
@@ -12,7 +12,6 @@ class NavigationView(ttk.Frame):
         app_title.grid(row=0, column=0, sticky="ew", pady=(0, 20))
 
         # --- Botones de Navegación ---
-        # El controlador principal (App) se encarga de mostrar las vistas
         self.sales_button = ttk.Button(self, text="🛒  Ventas (TPV)", command=self.app_controller.show_sales_view, style="Accent.TButton")
         self.sales_button.grid(row=1, column=0, sticky="ew", pady=2)
         
@@ -22,7 +21,10 @@ class NavigationView(ttk.Frame):
         self.services_button = ttk.Button(self, text="🔧  Servicios", state="disabled")
         self.services_button.grid(row=3, column=0, sticky="ew", pady=2)
 
-        self.reports_button = ttk.Button(self, text="📊  Reportes", state="disabled")
+        # El botón de reportes solo está habilitado para el rol de Administrador (ID 1)
+        is_admin = (self.app_controller.user_role == 1)
+        reports_state = tk.NORMAL if is_admin else tk.DISABLED
+        self.reports_button = ttk.Button(self, text="📊  Reportes", command=self.app_controller.show_reports_view, state=reports_state)
         self.reports_button.grid(row=4, column=0, sticky="ew", pady=2)
 
         self.grid_rowconfigure(5, weight=1) 

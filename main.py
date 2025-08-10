@@ -2,17 +2,21 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import sv_ttk
+
 # Importaciones de la aplicación
 from database import get_db_connection
 from auth import verify_password
+
+# Vistas
 from views.products_view import ProductsView
 from views.navigation_view import NavigationView
 from views.sales_view import SalesView
-# Modelos
-import product_model as p_model
+from modules.reports.reports_view import ReportsView
+
 # Controladores
 from product_controller import ProductController
 from sales_controller import SalesController
+from modules.reports.reports_controller import ReportsController
 
 
 class LoginWindow(tk.Tk):
@@ -109,6 +113,7 @@ class App(tk.Tk):
         # Crear vistas y guardarlas en el diccionario
         self.views['inventory'] = ProductsView(self.main_content_frame, self.user_role)
         self.views['sales'] = SalesView(self.main_content_frame)
+        self.views['reports'] = ReportsView(self.main_content_frame)
 
     def initialize_controllers(self):
         """Crea todas las instancias de los controladores."""
@@ -117,6 +122,10 @@ class App(tk.Tk):
         sales_controller = SalesController(self)
         sales_controller.set_view(self.views['sales'])
         self.controllers['sales'] = sales_controller
+
+        reports_controller = ReportsController(self)
+        reports_controller.set_view(self.views['reports'])
+        self.controllers['reports'] = reports_controller
 
     def show_view(self, view_name):
         """Oculta todas las vistas y muestra solo la seleccionada."""
@@ -135,7 +144,13 @@ class App(tk.Tk):
     def show_sales_view(self):
         """Muestra la vista de ventas."""
         self.show_view('sales')
-        self.controllers['sales'].search_products_for_sale("") # Limpia la búsqueda
+        self.controllers['sales'].search_products_for_sale("")
+
+    def show_reports_view(self):
+        """Muestra la vista de reportes y carga sus datos."""
+        self.show_view('reports')
+        self.controllers['reports'].load_data()
+
 
 if __name__ == "__main__":
     login_window = LoginWindow()
