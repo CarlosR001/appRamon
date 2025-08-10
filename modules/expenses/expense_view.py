@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from datetime import date
+from datetime import datetime
 
 # Intentamos importar el widget de calendario. Si no está, usamos un Entry normal.
 try:
@@ -48,10 +48,9 @@ class ExpensesView(ttk.Frame):
         ttk.Label(form_frame, text="Fecha:").grid(row=1, column=2, padx=5, pady=5, sticky="e")
         if calendar_available:
             self.date_entry = DateEntry(form_frame, date_pattern='dd/mm/yyyy', width=12, background='darkblue', foreground='white', borderwidth=2)
-            self.date_entry.set_date(date.today())
         else:
             self.date_entry = ttk.Entry(form_frame)
-            self.date_entry.insert(0, date.today().strftime('%Y-%m-%d'))
+            self.date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
         self.date_entry.grid(row=1, column=3, padx=5, pady=5, sticky="w")
 
         # Botón de Añadir
@@ -65,22 +64,18 @@ class ExpensesView(ttk.Frame):
         list_frame.columnconfigure(0, weight=1)
         list_frame.rowconfigure(0, weight=1)
         
-        # Botón de Eliminar
         self.delete_button = ttk.Button(list_frame, text="Eliminar Gasto Seleccionado")
         self.delete_button.pack(anchor="e", pady=(0,5))
         
-        # Treeview
         self.tree = ttk.Treeview(list_frame, columns=("id", "fecha", "descripcion", "monto"), show="headings")
         self.tree.heading("id", text="ID")
         self.tree.heading("fecha", text="Fecha")
         self.tree.heading("descripcion", text="Descripción")
         self.tree.heading("monto", text="Monto")
-
         self.tree.column("id", width=50, anchor=tk.CENTER)
         self.tree.column("fecha", width=100, anchor=tk.CENTER)
         self.tree.column("descripcion", width=400)
         self.tree.column("monto", width=120, anchor=tk.E)
-
         scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscroll=scrollbar.set)
         
@@ -88,27 +83,31 @@ class ExpensesView(ttk.Frame):
         scrollbar.pack(side="right", fill="y")
 
     def get_expense_data(self):
-        """Recupera los datos del formulario de nuevo gasto."""
+        """Recupera y valida los datos del formulario de nuevo gasto."""
+        description = self.description_var.get()
+        if not description:
+            messagebox.showwarning("Datos incompletos", "La descripción es un campo obligatorio.", parent=self)
+            return None
+        
         try:
-            description = self.description_var.get()
             amount = self.amount_var.get()
-            
-            if calendar_available:
-                expense_date = self.date_entry.get_date()
-            else:
-                expense_date = datetime.strptime(self.date_entry.get(), '%Y-%m-%d').date()
-
-            if not description or amount <= 0:
-                messagebox.showwarning("Datos incompletos", "La descripción y un monto mayor a cero son requeridos.", parent=self)
+            if amount <= 0:
+                messagebox.showwarning("Monto inválido", "El monto debe ser un número mayor a cero.", parent=self)
                 return None
-            
-            return {'description': description, 'amount': amount, 'expense_date': expense_date}
         except (ValueError, tk.TclError):
-            messagebox.showerror("Dato inválido", "Por favor, ingrese un monto numérico válido.", parent=self)
+            messagebox.showerror("Monto inválido", "Por favor, ingrese un monto numérico válido.", parent=self)
             return None
-        except Exception as e:
-            messagebox.showerror("Error de Fecha", f"El formato de la fecha no es válido: {e}", parent=self)
-            return None
+            
+        if calendar_available:
+            expense_date = self.date_entry.get_date()
+        else:
+            try:
+                expense_date = datetime.strptime(self.date_entry.get(), '%Y-%m-%d').date()
+            except ValueError:
+                messagebox.showerror("Fecha inválida", "Por favor, ingrese una fecha en formato AAAA-MM-DD.", parent=self)
+                return None
+        
+        return {'description': description, 'amount': amount, 'expense_date': expense_date}
 
     def get_selected_expense_id(self):
         selection = self.tree.selection()
@@ -117,18 +116,17 @@ class ExpensesView(ttk.Frame):
         return None
 
     def clear_form(self):
-        """Limpia los campos del formulario después de añadir un gasto."""
         self.description_var.set("")
         self.amount_var.set(0.0)
         if calendar_available:
-            self.date_entry.set_date(date.today())
+            self.date_entry.set_date(datetime.now().date())
 
     def clear_tree(self):
         self.tree.delete(*self.tree.get_children())
 
     def insert_expense(self, expense):
         fecha = expense.get('fecha')
-        if isinstance(fecha, date):
+        if isinstance(fecha, datetime.date):
             fecha = fecha.strftime('%d/%m/%Y')
         
         monto_formateado = f"S/ {expense.get('monto', 0.0):.2f}"
