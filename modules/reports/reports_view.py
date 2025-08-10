@@ -12,7 +12,6 @@ class ReportsView(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent, padding=10)
         self.controller = None
-
         self.columnconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
 
@@ -44,6 +43,7 @@ class ReportsView(ttk.Frame):
             self.profit_filter_button.config(command=self.controller.load_profit_summary_data)
 
     def create_daily_summary_widgets(self):
+        """Crea los widgets para la pestaña de Resumen Diario (CORREGIDO)."""
         self.daily_summary_frame.columnconfigure(0, weight=1)
         self.daily_summary_frame.rowconfigure(1, weight=1)
         
@@ -62,12 +62,16 @@ class ReportsView(ttk.Frame):
         tree_frame = ttk.Frame(self.daily_summary_frame)
         tree_frame.grid(row=1, column=0, sticky="nsew", pady=(10,0))
         tree_frame.columnconfigure(0, weight=1); tree_frame.rowconfigure(0, weight=1)
+        
         self.daily_summary_tree = ttk.Treeview(tree_frame, columns=("fecha", "num_ventas", "total"), show="headings")
         self.daily_summary_tree.heading("fecha", text="Fecha"); self.daily_summary_tree.heading("num_ventas", text="Nº de Ventas"); self.daily_summary_tree.heading("total", text="Total Vendido")
         self.daily_summary_tree.column("fecha", anchor=tk.W, width=150); self.daily_summary_tree.column("num_ventas", anchor=tk.CENTER, width=120); self.daily_summary_tree.column("total", anchor=tk.E, width=150)
+        
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.daily_summary_tree.yview)
         self.daily_summary_tree.configure(yscroll=scrollbar.set)
+        
         self.daily_summary_tree.grid(row=0, column=0, sticky="nsew"); scrollbar.grid(row=0, column=1, sticky="ns")
+
         footer_frame = ttk.Frame(self.daily_summary_frame, style="Card.TFrame", padding=10)
         footer_frame.grid(row=2, column=0, sticky="ew", pady=(10, 0))
         self.total_revenue_var = tk.StringVar(value="Ingresos en Periodo: S/ 0.00")
@@ -96,7 +100,6 @@ class ReportsView(ttk.Frame):
             self.profit_end_date.pack(side="left")
             self.profit_filter_button = ttk.Button(filter_frame, text="Calcular Ganancias en Periodo")
             self.profit_filter_button.pack(side="left", padx=10)
-
         self.profit_vars = {"revenue": tk.StringVar(value="S/ 0.00"), "cogs": tk.StringVar(value="S/ 0.00"),"gross_profit": tk.StringVar(value="S/ 0.00"),"expenses": tk.StringVar(value="S/ 0.00"), "net_profit": tk.StringVar(value="S/ 0.00")}
         container = ttk.Frame(self.profit_summary_frame, style="Card.TFrame", padding=20)
         container.pack(expand=True)
