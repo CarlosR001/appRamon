@@ -4,6 +4,7 @@ import product_model as p_model
 import sales_model as s_model
 from modules.clients import client_model
 from views.receipt_view import ReceiptView
+from modules.printing import pdf_generator # <-- 1. Importar el nuevo módulo
 
 class SalesController:
     def __init__(self, app_view):
@@ -16,6 +17,7 @@ class SalesController:
         self.sales_view = sales_view
         self.sales_view.set_controller(self)
 
+    # ... (El resto de los métodos hasta process_sale no cambian) ...
     def search_products_for_sale(self, search_term):
         if not self.sales_view: return
         tree = self.sales_view.search_results_tree
@@ -24,10 +26,8 @@ class SalesController:
             results = p_model.search_products(search_term)
             for product in results:
                 tree.insert("", tk.END, values=(
-                    product.get('nombre', ''),
-                    f"S/ {product.get('precio_venta', 0.0):.2f}",
-                    product.get('stock', 0),
-                    product.get('id')
+                    product.get('nombre', ''), f"S/ {product.get('precio_venta', 0.0):.2f}",
+                    product.get('stock', 0), product.get('id')
                 ))
 
     def add_product_to_cart(self, product_id):
@@ -35,16 +35,13 @@ class SalesController:
             if self.cart[product_id]['qty'] < self.cart[product_id]['data']['stock']:
                 self.cart[product_id]['qty'] += 1
             else:
-                messagebox.showwarning("Stock Insuficiente", "No hay más stock disponible para este producto.", parent=self.sales_view)
+                messagebox.showwarning("Stock Insuficiente", "No hay más stock para este producto.", parent=self.sales_view)
         else:
             product_data = p_model.get_by_id(product_id)
             if product_data:
-                if product_data['stock'] > 0:
-                    self.cart[product_id] = {'data': product_data, 'qty': 1}
-                else:
-                    messagebox.showwarning("Sin Stock", "Este producto no tiene stock disponible.", parent=self.sales_view)
-            else:
-                messagebox.showerror("Error", f"No se pudo encontrar el producto con ID {product_id}.", parent=self.sales_view)
+                if product_data['stock'] > 0: self.cart[product_id] = {'data': product_data, 'qty': 1}
+                else: messagebox.showwarning("Sin Stock", "Este producto no tiene stock.", parent=self.sales_view)
+            else: messagebox.showerror("Error", f"No se pudo encontrar el producto con ID {product_id}.", parent=self.sales_view)
         self.update_cart_display()
 
     def update_cart_display(self):
@@ -53,9 +50,7 @@ class SalesController:
         tree.delete(*tree.get_children())
         total_sale = 0
         for product_id, item in self.cart.items():
-            qty = item['qty']
-            name = item['data'].get('nombre', '')
-            price = item['data'].get('precio_venta', 0.0)
+            qty, name, price = item['qty'], item['data'].get('nombre', ''), item['data'].get('precio_venta', 0.0)
             subtotal = qty * price
             total_sale += subtotal
             tree.insert("", tk.END, values=(product_id, qty, name, f"S/ {price:.2f}", f"S/ {subtotal:.2f}"))
@@ -63,69 +58,46 @@ class SalesController:
 
     def increase_cart_item_qty(self):
         selected_id = self.sales_view.get_selected_cart_item_id()
-        if not selected_id: return
         if selected_id in self.cart:
             if self.cart[selected_id]['qty'] < self.cart[selected_id]['data']['stock']:
                 self.cart[selected_id]['qty'] += 1
                 self.update_cart_display()
-            else:
-                messagebox.showwarning("Stock Insuficiente", "No hay más stock disponible.", parent=self.sales_view)
+            else: messagebox.showwarning("Stock Insuficiente", "No hay más stock.", parent=self.sales_view)
 
     def decrease_cart_item_qty(self):
         selected_id = self.sales_view.get_selected_cart_item_id()
-        if not selected_id: return
         if selected_id in self.cart:
             self.cart[selected_id]['qty'] -= 1
-            if self.cart[selected_id]['qty'] == 0:
-                del self.cart[selected_id]
+            if self.cart[selected_id]['qty'] == 0: del self.cart[selected_id]
             self.update_cart_display()
 
     def remove_cart_item(self):
         selected_id = self.sales_view.get_selected_cart_item_id()
-        if not selected_id: return
         if selected_id in self.cart:
             del self.cart[selected_id]
             self.update_cart_display()
 
     def show_client_search_popup(self):
         popup = tk.Toplevel(self.app_view)
-        popup.title("Seleccionar Cliente")
-        popup.geometry("450x300")
-        popup.transient(self.app_view)
-        popup.grab_set()
-        search_frame = ttk.Frame(popup, padding=10)
-        search_frame.pack(fill="x")
-        search_frame.columnconfigure(0, weight=1)
-        ttk.Label(search_frame, text="Buscar cliente por nombre:").pack(anchor="w")
-        search_var = tk.StringVar()
-        search_entry = ttk.Entry(search_frame, textvariable=search_var)
-        search_entry.pack(fill="x", pady=5)
+        popup.title("Seleccionar Cliente"); popup.geometry("450x300"); popup.transient(self.app_view); popup.grab_set()
+        search_frame = ttk.Frame(popup, padding=10); search_frame.pack(fill="x"); search_frame.columnconfigure(0, weight=1)
+        ttk.Label(search_frame, text="Buscar cliente:").pack(anchor="w"); search_var = tk.StringVar()
+        search_entry = ttk.Entry(search_frame, textvariable=search_var); search_entry.pack(fill="x", pady=5)
         results_tree = ttk.Treeview(popup, columns=("id", "nombre", "telefono"), show="headings", height=5)
-        results_tree.heading("id", text="ID")
-        results_tree.heading("nombre", text="Nombre")
-        results_tree.heading("telefono", text="Teléfono")
-        results_tree.column("id", width=50, anchor="center")
-        results_tree.pack(fill="both", expand=True, padx=10, pady=5)
+        results_tree.heading("id", text="ID"); results_tree.heading("nombre", text="Nombre"); results_tree.heading("telefono", text="Teléfono")
+        results_tree.column("id", width=50, anchor="center"); results_tree.pack(fill="both", expand=True, padx=10, pady=5)
         def update_search(event=None):
-            term = search_var.get()
             results_tree.delete(*results_tree.get_children())
-            clients = client_model.search(term)
-            for client in clients:
-                results_tree.insert("", "end", values=(client['id'], client['nombre'], client['telefono']))
+            for client in client_model.search(search_var.get()): results_tree.insert("", "end", values=(client['id'], client['nombre'], client['telefono']))
         search_entry.bind("<KeyRelease>", update_search)
         def select_client():
             selection = results_tree.selection()
-            if not selection:
-                messagebox.showwarning("Sin Selección", "Por favor, seleccione un cliente de la lista.", parent=popup)
-                return
+            if not selection: return
             client_id, client_name, _ = results_tree.item(selection[0], "values")
-            self.selected_client_id = int(client_id)
-            self.sales_view.selected_client_var.set(f"Cliente: {client_name}")
-            popup.destroy()
-        button_frame = ttk.Frame(popup, padding=10)
-        button_frame.pack(fill="x")
-        ttk.Button(button_frame, text="Seleccionar", command=select_client, style="Accent.TButton").pack(side="right")
-        ttk.Button(button_frame, text="Cancelar", command=popup.destroy).pack(side="right", padx=5)
+            self.selected_client_id = int(client_id); self.sales_view.selected_client_var.set(f"Cliente: {client_name}"); popup.destroy()
+        btn_frame = ttk.Frame(popup, padding=10); btn_frame.pack(fill="x")
+        ttk.Button(btn_frame, text="Seleccionar", command=select_client, style="Accent.TButton").pack(side="right")
+        ttk.Button(btn_frame, text="Cancelar", command=popup.destroy).pack(side="right", padx=5)
         update_search()
 
     def process_sale(self):
@@ -141,20 +113,29 @@ class SalesController:
                 self.clear_sale(confirm=False)
                 self.show_receipt(sale_id)
             else:
-                messagebox.showerror("Error de Transacción", "Ocurrió un error al registrar la venta. La base de datos no ha sido modificada. Verifique el stock de los productos.")
+                messagebox.showerror("Error de Transacción", "Ocurrió un error al registrar la venta. Verifique el stock de los productos.")
 
     def show_receipt(self, sale_id):
         receipt_data = s_model.get_sale_details_for_receipt(sale_id)
         if receipt_data:
-            receipt_window = ReceiptView(self.app_view, receipt_data)
+            # <-- 2. Pasar el controlador a la vista del recibo
+            receipt_window = ReceiptView(self.app_view, self, receipt_data)
             receipt_window.wait_window()
         else:
             messagebox.showerror("Error de Recibo", f"No se pudieron obtener los detalles para la venta #{sale_id}.")
 
+    # --- 3. Nuevo método para ser llamado desde la vista del recibo ---
+    def print_receipt(self, receipt_data, print_format):
+        """Llama al generador de PDF."""
+        try:
+            pdf_generator.generate_receipt(receipt_data, print_format)
+            messagebox.showinfo("PDF Generado", "El recibo en PDF se ha generado y abierto.", parent=self.app_view)
+        except Exception as e:
+            messagebox.showerror("Error de Impresión", f"No se pudo generar el PDF: {e}", parent=self.app_view)
+
     def clear_sale(self, confirm=True):
         if confirm and self.cart:
-            answer = messagebox.askyesno("Confirmar Cancelación", "¿Desea cancelar la venta actual?", parent=self.sales_view)
-            if not answer: return
+            if not messagebox.askyesno("Confirmar Cancelación", "¿Desea cancelar la venta actual?", parent=self.sales_view): return
         self.cart.clear()
         self.selected_client_id = None
         self.sales_view.selected_client_var.set("Cliente: Público General")
