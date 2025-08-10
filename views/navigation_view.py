@@ -14,20 +14,23 @@ class NavigationView(ttk.Frame):
         # --- Botones de Navegación ---
         self.sales_button = ttk.Button(self, text="🛒  Ventas (TPV)", command=self.app_controller.show_sales_view, style="Accent.TButton")
         self.sales_button.grid(row=1, column=0, sticky="ew", pady=2)
+
+        self.clients_button = ttk.Button(self, text="👥  Clientes", command=self.app_controller.show_clients_view)
+        self.clients_button.grid(row=2, column=0, sticky="ew", pady=2)
         
         self.inventory_button = ttk.Button(self, text="≡  Inventario", command=self.app_controller.show_inventory_view)
-        self.inventory_button.grid(row=2, column=0, sticky="ew", pady=2)
+        self.inventory_button.grid(row=3, column=0, sticky="ew", pady=2)
 
         self.services_button = ttk.Button(self, text="🔧  Servicios", state="disabled")
-        self.services_button.grid(row=3, column=0, sticky="ew", pady=2)
+        self.services_button.grid(row=4, column=0, sticky="ew", pady=2)
 
         # El botón de reportes solo está habilitado para el rol de Administrador (ID 1)
         is_admin = (self.app_controller.user_role == 1)
         reports_state = tk.NORMAL if is_admin else tk.DISABLED
         self.reports_button = ttk.Button(self, text="📊  Reportes", command=self.app_controller.show_reports_view, state=reports_state)
-        self.reports_button.grid(row=4, column=0, sticky="ew", pady=2)
+        self.reports_button.grid(row=5, column=0, sticky="ew", pady=2)
 
-        self.grid_rowconfigure(5, weight=1) 
+        self.grid_rowconfigure(6, weight=1) 
 
         self.settings_button = ttk.Button(self, text="⚙️  Configuración", state="disabled")
-        self.settings_button.grid(row=6, column=0, sticky="ew", pady=10)
+        self.settings_button.grid(row=7, column=0, sticky="ew", pady=10)
