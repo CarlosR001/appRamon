@@ -58,16 +58,15 @@ class AddProductView(tk.Toplevel):
         cancel_button.pack(side="left", padx=10)
     
     def save(self):
-        # La lógica de guardado la manejará el controlador
         try:
             # Recopilar datos de los widgets
             data = {
                 'codigo': self.entries['Código:'].get(),
                 'nombre': self.entries['Nombre:'].get(),
                 'descripcion': self.entries['Descripción:'].get("1.0", tk.END).strip(),
-                'precio_compra': self.entries['Precio Compra:'].get(),
-                'precio_venta': self.entries['Precio Venta:'].get(),
-                'stock': self.entries['Stock Inicial:'].get(),
+                'precio_compra': float(self.entries['Precio Compra:'].get()),
+                'precio_venta': float(self.entries['Precio Venta:'].get()),
+                'stock': int(self.entries['Stock Inicial:'].get()),
                 'categoria_nombre': self.entries['Categoría:'].get()
             }
 
@@ -84,12 +83,11 @@ class AddProductView(tk.Toplevel):
             
             data['id_categoria'] = cat_id
             
-            # PASO CORREGIDO: Llamar al controlador de productos correctamente
-         self.parent.controllers['products'].save_new_product(data)
-
+            # Llamada al controlador corregida
+            self.parent.controllers['products'].save_new_product(data)
             self.destroy()
 
-        except tk.TclError as e:
-            messagebox.showerror("Error de Tipo de Dato", f"Por favor, ingrese un número válido en los campos de precio y stock.\n({e})", parent=self)
+        except (ValueError, tk.TclError):
+            messagebox.showerror("Error de Tipo de Dato", "Por favor, ingrese un número válido en los campos de precio y stock.", parent=self)
         except Exception as e:
             messagebox.showerror("Error Inesperado", f"Ocurrió un error: {e}", parent=self)
