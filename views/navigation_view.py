@@ -21,7 +21,7 @@ class NavigationView(ttk.Frame):
         self.inventory_button = ttk.Button(self, text="≡  Inventario", command=self.app_controller.show_inventory_view)
         self.inventory_button.grid(row=3, column=0, sticky="ew", pady=2)
 
-        self.services_button = ttk.Button(self, text="🔧  Servicios", state="disabled")
+        self.services_button = ttk.Button(self, text="🔧  Servicios", command=self.app_controller.show_services_view)
         self.services_button.grid(row=4, column=0, sticky="ew", pady=2)
 
         # El botón de reportes solo está habilitado para el rol de Administrador (ID 1)

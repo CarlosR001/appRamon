@@ -10,7 +10,7 @@ def get_by_id(client_id):
     cursor = conn.cursor(dictionary=True)
     try:
         cursor.execute("SELECT * FROM clientes WHERE id = %s", (client_id,))
-        return cursor.fetchone() # Devuelve un solo resultado o None
+        return cursor.fetchone()
     except Error as e:
         print(f"Error al obtener cliente por ID: {e}")
         return None
@@ -57,7 +57,7 @@ def add(data):
         conn.commit()
         return True
     except Error as e:
-        print(f"ERROR AL AÑADIR CLIENTE EN EL MODELO: {e}") # <<-- Mensaje de diagnóstico
+        print(f"ERROR AL AÑADIR CLIENTE EN EL MODELO: {e}")
         conn.rollback()
         return False
     finally:
@@ -69,12 +69,23 @@ def update(client_id, data):
     conn = get_db_connection()
     if not conn: return False
     cursor = conn.cursor()
+    
+    # Consulta SQL corregida y limpia
     query = """
-        UPDATE clientes SET nombre = %s, telefono = %s, email = %s, direccion = %s
+        UPDATE clientes 
+        SET nombre = %s, telefono = %s, email = %s, direccion = %s
         WHERE id = %s
     """
+    params = (
+        data.get('nombre'),
+        data.get('telefono'),
+        data.get('email'),
+        data.get('direccion'),
+        client_id
+    )
+    
     try:
-        cursor.execute(query, (data['nombre'], data['telefono'], data['email'], data['direccion'], client_id))
+        cursor.execute(query, params)
         conn.commit()
         return True
     except Error as e:

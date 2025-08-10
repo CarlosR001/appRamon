@@ -13,12 +13,14 @@ from views.navigation_view import NavigationView
 from views.sales_view import SalesView
 from modules.reports.reports_view import ReportsView
 from modules.clients.client_view import ClientsView
+from modules.services.service_view import ServicesView
 
 # Controladores
 from product_controller import ProductController
 from sales_controller import SalesController
 from modules.reports.reports_controller import ReportsController
 from modules.clients.client_controller import ClientController
+from modules.services.service_controller import ServiceController
 
 
 class LoginWindow(tk.Tk):
@@ -117,6 +119,7 @@ class App(tk.Tk):
         self.views['sales'] = SalesView(self.main_content_frame)
         self.views['reports'] = ReportsView(self.main_content_frame)
         self.views['clients'] = ClientsView(self.main_content_frame)
+        self.views['services'] = ServicesView(self.main_content_frame)
 
     def initialize_controllers(self):
         """Crea todas las instancias de los controladores."""
@@ -131,8 +134,10 @@ class App(tk.Tk):
         self.controllers['reports'] = reports_controller
 
         client_controller = ClientController(self)
-        # La vista de clientes ya se conecta al controlador en su init
         self.controllers['clients'] = client_controller
+
+        service_controller = ServiceController(self)
+        self.controllers['services'] = service_controller
 
     def show_view(self, view_name):
         """Oculta todas las vistas y muestra solo la seleccionada."""
@@ -151,7 +156,6 @@ class App(tk.Tk):
     def show_sales_view(self):
         """Muestra la vista de ventas."""
         self.show_view('sales')
-        # Limpia la búsqueda de productos cada vez que se muestra
         self.controllers['sales'].search_products_for_sale("") 
 
     def show_reports_view(self):
@@ -163,6 +167,11 @@ class App(tk.Tk):
         """Muestra la vista de clientes y carga los datos."""
         self.show_view('clients')
         self.controllers['clients'].load_all_clients()
+
+    def show_services_view(self):
+        """Muestra la vista de servicios y carga los datos."""
+        self.show_view('services')
+        self.controllers['services'].load_all_services()
 
 
 if __name__ == "__main__":
