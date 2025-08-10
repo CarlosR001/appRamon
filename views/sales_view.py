@@ -7,15 +7,12 @@ class SalesView(ttk.Frame):
         self.controller = None
 
         # --- Layout Principal (2 columnas) ---
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=2)
-        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1); self.columnconfigure(1, weight=2); self.rowconfigure(0, weight=1)
 
         # --- Columna Izquierda: Búsqueda y Resultados ---
         left_frame = ttk.Frame(self, padding=10)
         left_frame.grid(row=0, column=0, sticky="nsew")
-        left_frame.columnconfigure(0, weight=1)
-        left_frame.rowconfigure(1, weight=1)
+        left_frame.columnconfigure(0, weight=1); left_frame.rowconfigure(1, weight=1)
         
         ttk.Label(left_frame, text="Buscar Producto", font=("Segoe UI", 14, "bold")).grid(row=0, column=0, sticky="w", pady=(0, 5))
         
@@ -25,21 +22,16 @@ class SalesView(ttk.Frame):
         search_entry.bind("<KeyRelease>", self.on_key_release)
 
         self.search_results_tree = ttk.Treeview(left_frame, columns=("nombre", "precio", "stock", "id"), show="headings", displaycolumns=("nombre", "precio", "stock"))
-        self.search_results_tree.heading("nombre", text="Producto")
-        self.search_results_tree.heading("precio", text="Precio")
-        self.search_results_tree.heading("stock", text="Stock")
-        self.search_results_tree.column("precio", width=80, anchor=tk.E)
-        self.search_results_tree.column("stock", width=60, anchor=tk.CENTER)
+        self.search_results_tree.heading("nombre", text="Producto"); self.search_results_tree.heading("precio", text="Precio"); self.search_results_tree.heading("stock", text="Stock")
+        self.search_results_tree.column("precio", width=80, anchor=tk.E); self.search_results_tree.column("stock", width=60, anchor=tk.CENTER)
         self.search_results_tree.grid(row=1, column=0, sticky="nsew")
         self.search_results_tree.bind("<Double-1>", self.add_to_cart_event)
 
         # --- Columna Derecha: Carrito de Venta ---
         right_frame = ttk.Frame(self, style="Card.TFrame", padding=20)
         right_frame.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
-        right_frame.columnconfigure(0, weight=1)
-        right_frame.rowconfigure(2, weight=1)
-
-        # Sección del Cliente
+        right_frame.columnconfigure(0, weight=1); right_frame.rowconfigure(2, weight=1)
+        
         client_section_frame = ttk.Frame(right_frame, style="Card.TFrame")
         client_section_frame.grid(row=0, column=0, sticky="ew", pady=(0, 15))
         client_section_frame.columnconfigure(0, weight=1)
@@ -54,15 +46,13 @@ class SalesView(ttk.Frame):
         self.cart_tree.heading("qty", text="Cant."); self.cart_tree.heading("nombre", text="Producto"); self.cart_tree.heading("precio_unit", text="P. Unit."); self.cart_tree.heading("subtotal", text="Subtotal")
         self.cart_tree.column("qty", width=50, anchor=tk.CENTER); self.cart_tree.column("precio_unit", width=80, anchor=tk.E); self.cart_tree.column("subtotal", width=90, anchor=tk.E)
         self.cart_tree.grid(row=2, column=0, sticky="nsew", pady=5)
+        self.cart_tree.bind("<Double-1>", self.edit_cart_item_price_event)
 
         cart_controls_frame = ttk.Frame(right_frame, style="Card.TFrame")
         cart_controls_frame.grid(row=3, column=0, sticky="e", pady=(5,0))
-        self.increase_qty_button = ttk.Button(cart_controls_frame, text="+")
-        self.increase_qty_button.pack(side="left")
-        self.decrease_qty_button = ttk.Button(cart_controls_frame, text="-")
-        self.decrease_qty_button.pack(side="left", padx=5)
-        self.remove_item_button = ttk.Button(cart_controls_frame, text="Eliminar")
-        self.remove_item_button.pack(side="left")
+        self.increase_qty_button = ttk.Button(cart_controls_frame, text="+"); self.increase_qty_button.pack(side="left")
+        self.decrease_qty_button = ttk.Button(cart_controls_frame, text="-"); self.decrease_qty_button.pack(side="left", padx=5)
+        self.remove_item_button = ttk.Button(cart_controls_frame, text="Eliminar"); self.remove_item_button.pack(side="left")
         
         total_frame = ttk.Frame(right_frame, style="Card.TFrame")
         total_frame.grid(row=4, column=0, sticky="ew", pady=10)
@@ -92,29 +82,25 @@ class SalesView(ttk.Frame):
         self.controller.search_products_for_sale(self.search_var.get())
 
     def add_to_cart_event(self, event):
-        """Pide la cantidad antes de añadir al carrito."""
         selected_item = self.search_results_tree.focus()
         if not selected_item: return
-        
         item_values = self.search_results_tree.item(selected_item, "values")
-        product_id = int(item_values[3])
-        product_name = item_values[0]
-        product_stock = int(item_values[2])
-        
-        if product_stock <= 0:
-            messagebox.showwarning("Sin Stock", "Este producto no tiene stock disponible.", parent=self)
-            return
+        product_id, product_name, product_stock = int(item_values[3]), item_values[0], int(item_values[2])
+        if product_stock <= 0: messagebox.showwarning("Sin Stock", "Este producto no tiene stock.", parent=self); return
+        qty = simpledialog.askinteger("Cantidad", f"Ingrese la cantidad para:\n{product_name}", parent=self, minvalue=1, maxvalue=product_stock)
+        if qty: self.controller.add_product_to_cart(product_id, qty)
 
-        qty = simpledialog.askinteger("Cantidad", 
-                                     f"Ingrese la cantidad para:\n{product_name}",
-                                     parent=self, 
-                                     minvalue=1, 
-                                     maxvalue=product_stock) # No permitir vender más del stock
-        if qty:
-            self.controller.add_product_to_cart(product_id, qty)
+    def edit_cart_item_price_event(self, event):
+        selected_item_id = self.get_selected_cart_item_id()
+        if not selected_item_id: return
+        item_data = self.controller.get_cart_item_data(selected_item_id)
+        if not item_data: return
+        product_name = item_data['data'].get('nombre', '')
+        current_price = item_data.get('price_override') or item_data['data'].get('precio_venta', 0.0)
+        new_price = simpledialog.askfloat("Editar Precio", f"Ingrese el nuevo precio de venta para:\n{product_name}", initialvalue=current_price, parent=self, minvalue=0.0)
+        if new_price is not None: self.controller.update_cart_item_price(selected_item_id, new_price)
 
     def get_selected_cart_item_id(self):
         selection = self.cart_tree.selection()
-        if selection:
-            return int(self.cart_tree.item(selection[0])['values'][0])
+        if selection: return int(self.cart_tree.item(selection[0])['values'][0])
         return None
