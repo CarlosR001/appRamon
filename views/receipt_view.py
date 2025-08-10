@@ -9,7 +9,7 @@ class ReceiptView(tk.Toplevel):
         self.receipt_data = receipt_data
 
         self.title(f"Recibo de Venta #{receipt_data.get('id', '')}")
-        self.geometry("380x550") # Un poco más alto para el nuevo campo
+        self.geometry("380x550")
         self.resizable(False, False)
         self.grab_set()
 
@@ -18,7 +18,7 @@ class ReceiptView(tk.Toplevel):
         main_frame.columnconfigure(0, weight=1)
         main_frame.rowconfigure(4, weight=1)
 
-        ttk.Label(main_frame, text="Nombre de tu Tienda", font=("Segoe UI", 16, "bold")).grid(row=0, column=0, columnspan=2, pady=(0,5))
+        ttk.Label(main_frame, text="Centro electronico Ramon", font=("Segoe UI", 16, "bold")).grid(row=0, column=0, columnspan=2, pady=(0,5))
         ttk.Label(main_frame, text="Recibo de Venta", font=("Segoe UI", 10, "italic")).grid(row=1, column=0, columnspan=2, pady=(0, 10))
 
         info_frame = ttk.Frame(main_frame)

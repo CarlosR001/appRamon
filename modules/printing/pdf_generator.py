@@ -9,9 +9,6 @@ if not os.path.exists('receipts'):
     os.makedirs('receipts')
 
 def generate_receipt(receipt_data, print_format="ticket"):
-    """
-    Genera un archivo PDF para un recibo de venta en formato ticket o A4.
-    """
     sale_id = receipt_data.get('id', 'N_A')
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     file_path = os.path.join('receipts', f'recibo_{sale_id}_{timestamp}.pdf')
@@ -39,7 +36,7 @@ def generate_receipt(receipt_data, print_format="ticket"):
             else: c.drawString(margin, y_position, text)
             y_position -= y_offset
 
-        draw_text("Nombre de tu Tienda", "Helvetica-Bold", font_size_large, 8 * mm, align="center")
+        draw_text("Centro electronico Ramon", "Helvetica-Bold", font_size_large, 8 * mm, align="center")
         draw_text("Recibo de Venta", "Helvetica", font_size_small, 8 * mm, align="center")
 
         fecha_venta = receipt_data.get('fecha', datetime.now()).strftime('%d/%m/%Y %H:%M')
@@ -87,7 +84,6 @@ def generate_receipt(receipt_data, print_format="ticket"):
         print(f"Error al generar el PDF: {e}")
 
 def generate_cash_balance_report(report_data):
-    """Genera un archivo PDF para el reporte de Cuadre de Caja."""
     balance_date = report_data.get('date', datetime.now().date())
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     file_path = os.path.join('receipts', f'cuadre_caja_{balance_date.strftime("%Y%m%d")}_{timestamp}.pdf')
@@ -99,7 +95,8 @@ def generate_cash_balance_report(report_data):
         def draw_line(y_offset=4 * mm):
             nonlocal y_pos
             y_pos -= y_offset; c.line(margin, y_pos, width - margin, y_pos); y_pos -= y_offset
-        c.setFont("Helvetica-Bold", 18); c.drawCentredString(width / 2, y_pos, "Cuadre de Caja"); y_pos -= 8 * mm
+        c.setFont("Helvetica-Bold", 18); c.drawCentredString(width / 2, y_pos, "Cuadre de Caja")
+        y_pos -= 8 * mm
         c.setFont("Helvetica", 12); c.drawCentredString(width / 2, y_pos, f"Fecha: {balance_date.strftime('%d/%m/%Y')}"); y_pos -= 12 * mm
         c.setFont("Helvetica-Bold", 14); c.drawString(margin, y_pos, "Ingresos (Ventas)"); draw_line()
         c.setFont("Helvetica-Bold", 10); c.drawString(margin, y_pos, "ID Venta"); c.drawString(margin + 60*mm, y_pos, "Vendedor"); c.drawRightString(width - margin, y_pos, "Total"); y_pos -= 6 * mm

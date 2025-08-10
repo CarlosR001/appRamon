@@ -3,3 +3,4 @@ Pillow
 sv-ttk
 tkcalendar
 reportlab
+pyinstaller
