@@ -1,6 +1,7 @@
 # Punto de entrada principal de la aplicación
 import tkinter as tk
 from tkinter import ttk, messagebox
+import sv_ttk # Importamos la librería de temas
 
 from database import get_db_connection
 from auth import verify_password
@@ -10,9 +11,9 @@ import product_model as p_model
 from product_controller import ProductController
 
 class LoginWindow(tk.Tk):
-    # --- El código de LoginWindow no cambia ---
     def __init__(self):
         super().__init__()
+        sv_ttk.set_theme("dark") # Aplicar tema oscuro a la ventana de login
         self.title("Iniciar Sesión")
         self.geometry("300x150")
         self.resizable(False, False)
@@ -20,18 +21,20 @@ class LoginWindow(tk.Tk):
         self.center_window()
 
     def create_widgets(self):
+        # El tema se encarga del estilo, ya no necesitamos frames extras
         self.username_label = ttk.Label(self, text="Usuario:")
-        self.username_label.pack(pady=5)
+        self.username_label.pack(pady=(10, 0))
         self.username_entry = ttk.Entry(self)
-        self.username_entry.pack(pady=5)
+        self.username_entry.pack(pady=5, padx=20, fill="x")
         self.password_label = ttk.Label(self, text="Contraseña:")
-        self.password_label.pack(pady=5)
+        self.password_label.pack(pady=(10, 0))
         self.password_entry = ttk.Entry(self, show="*")
-        self.password_entry.pack(pady=5)
-        self.login_button = ttk.Button(self, text="Ingresar", command=self.attempt_login)
+        self.password_entry.pack(pady=5, padx=20, fill="x")
+        self.login_button = ttk.Button(self, text="Ingresar", command=self.attempt_login, style="Accent.TButton")
         self.login_button.pack(pady=10)
 
     def center_window(self):
+        # ... (código sin cambios)
         self.update_idletasks()
         width = self.winfo_width()
         height = self.winfo_height()
@@ -40,6 +43,7 @@ class LoginWindow(tk.Tk):
         self.geometry(f'{width}x{height}+{x}+{y}')
 
     def attempt_login(self):
+        # ... (código sin cambios)
         username = self.username_entry.get()
         password = self.password_entry.get()
         if not username or not password:
@@ -66,60 +70,53 @@ class App(tk.Tk):
     def __init__(self, user_role):
         super().__init__()
         self.user_role = user_role
+        
+        # Aplicar el tema ANTES de crear cualquier widget
+        sv_ttk.set_theme("dark")
+
         self.title("Electro-Pro: Sistema de Gestión")
         self.geometry("1280x720")
-        self.minsize(1000, 600) # Establecer un tamaño mínimo
+        self.minsize(1000, 600)
 
-        # Configurar el layout principal
         self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=1) # El área de contenido se expandirá
+        self.grid_columnconfigure(1, weight=1)
 
-        # Crear las vistas principales
         self.views = {}
         self.create_views()
-
-        # Inicializar los controladores
         self.initialize_controllers()
-        
-        # Mostrar la vista de inventario por defecto
         self.show_inventory_view()
 
     def create_views(self):
-        """Crea el layout principal con navegación y área de contenido."""
-        # Panel de Navegación
+        # Quitamos el estilo manual de NavigationView, el tema lo manejará
         self.navigation_view = NavigationView(self, self)
         self.navigation_view.grid(row=0, column=0, sticky="nsw")
 
-        # Área de Contenido (un Frame que contendrá las vistas de cada módulo)
         self.main_content_frame = ttk.Frame(self)
         self.main_content_frame.grid(row=0, column=1, sticky="nsew")
         self.main_content_frame.grid_rowconfigure(0, weight=1)
         self.main_content_frame.grid_columnconfigure(0, weight=1)
 
-        # Crear la vista de productos pero no mostrarla todavía
         self.products_view = ProductsView(self.main_content_frame, self.user_role)
         self.views['inventory'] = self.products_view
-        # Aquí se crearían las otras vistas (ventas, servicios, etc.)
 
     def show_view(self, view_name):
-        """Muestra una vista en el área de contenido principal."""
+        # ... (código sin cambios)
         for view in self.views.values():
-            view.grid_remove() # Oculta todas las vistas
-        
+            view.grid_remove()
         view_to_show = self.views.get(view_name)
         if view_to_show:
-            view_to_show.grid(row=0, column=0, sticky="nsew") # Muestra la vista deseada
+            view_to_show.grid(row=0, column=0, sticky="nsew")
 
     def show_inventory_view(self):
-        """Muestra específicamente la vista de inventario."""
+        # ... (código sin cambios)
         self.show_view('inventory')
-        self.load_products_data() # Carga los datos cada vez que se muestra
+        self.load_products_data()
 
     def initialize_controllers(self):
         self.controller = ProductController(self)
 
     def load_products_data(self):
-        """Carga los productos y los muestra en la tabla."""
+        # ... (código sin cambios)
         if 'inventory' in self.views:
             self.products_view.clear_tree()
             products_list = p_model.get_all_products()
@@ -128,5 +125,7 @@ class App(tk.Tk):
 
 
 if __name__ == "__main__":
+    # La aplicación principal (Login) ya inicializa el tema
     login_window = LoginWindow()
     login_window.mainloop()
+

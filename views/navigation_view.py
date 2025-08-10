@@ -3,43 +3,33 @@ from tkinter import ttk
 
 class NavigationView(ttk.Frame):
     def __init__(self, parent, controller):
-        super().__init__(parent, style="Nav.TFrame")
+        super().__init__(parent, style="Card.TFrame", padding=10) # Usamos el estilo 'Card' del tema
         self.controller = controller
-
-        # Estilo para el Frame de navegación
-        style = ttk.Style()
-        style.configure("Nav.TFrame", background="#2c3e50") # Un color oscuro y moderno
-        style.configure("Nav.TButton", 
-                        font=("Arial", 12, "bold"), 
-                        background="#2c3e50",
-                        foreground="white",
-                        padding=(10, 15))
-        style.map("Nav.TButton", 
-                  background=[("active", "#34495e")], # Color al pasar el ratón
-                  foreground=[("active", "white")])
 
         self.columnconfigure(0, weight=1)
 
         # Título de la App
-        app_title = ttk.Label(self, text="ELECTRO-PRO", font=("Arial", 20, "bold"), background="#2c3e50", foreground="white", padding=(10, 20))
-        app_title.grid(row=0, column=0, sticky="ew", pady=(10, 20))
+        # Usamos los estilos del tema, ya no definimos colores manualmente
+        app_title = ttk.Label(self, text="ELECTRO-PRO", font=("Segoe UI", 18, "bold"))
+        app_title.grid(row=0, column=0, sticky="ew", pady=(0, 20))
 
         # --- Botones de Navegación ---
-        self.inventory_button = ttk.Button(self, text="≡  Inventario", style="Nav.TButton", command=self.controller.show_inventory_view)
-        self.inventory_button.grid(row=1, column=0, sticky="ew", padx=10, pady=2)
+        # El estilo de los botones es manejado por el tema sv-ttk
+        # El estilo 'Accent.TButton' le da un color especial al botón principal
+        self.inventory_button = ttk.Button(self, text="≡  Inventario", command=self.controller.show_inventory_view, style="Accent.TButton")
+        self.inventory_button.grid(row=1, column=0, sticky="ew", pady=2)
 
-        self.sales_button = ttk.Button(self, text="🛒  Ventas (TPV)", style="Nav.TButton", state="disabled") # Deshabilitado por ahora
-        self.sales_button.grid(row=2, column=0, sticky="ew", padx=10, pady=2)
+        self.sales_button = ttk.Button(self, text="🛒  Ventas (TPV)", state="disabled")
+        self.sales_button.grid(row=2, column=0, sticky="ew", pady=2)
 
-        self.services_button = ttk.Button(self, text="🔧  Servicios", style="Nav.TButton", state="disabled")
-        self.services_button.grid(row=3, column=0, sticky="ew", padx=10, pady=2)
+        self.services_button = ttk.Button(self, text="🔧  Servicios", state="disabled")
+        self.services_button.grid(row=3, column=0, sticky="ew", pady=2)
 
-        self.reports_button = ttk.Button(self, text="📊  Reportes", style="Nav.TButton", state="disabled")
-        self.reports_button.grid(row=4, column=0, sticky="ew", padx=10, pady=2)
+        self.reports_button = ttk.Button(self, text="📊  Reportes", state="disabled")
+        self.reports_button.grid(row=4, column=0, sticky="ew", pady=2)
 
         # Espaciador para empujar el botón de configuración hacia abajo
         self.grid_rowconfigure(5, weight=1) 
 
-        self.settings_button = ttk.Button(self, text="⚙️  Configuración", style="Nav.TButton", state="disabled")
-        self.settings_button.grid(row=6, column=0, sticky="ew", padx=10, pady=(10,20))
-
+        self.settings_button = ttk.Button(self, text="⚙️  Configuración", state="disabled")
+        self.settings_button.grid(row=6, column=0, sticky="ew", pady=10)
