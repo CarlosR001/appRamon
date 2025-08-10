@@ -9,6 +9,9 @@ if not os.path.exists('receipts'):
     os.makedirs('receipts')
 
 def generate_receipt(receipt_data, print_format="ticket"):
+    """
+    Genera un archivo PDF para un recibo de venta en formato ticket o A4.
+    """
     sale_id = receipt_data.get('id', 'N_A')
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     file_path = os.path.join('receipts', f'recibo_{sale_id}_{timestamp}.pdf')
@@ -82,3 +85,42 @@ def generate_receipt(receipt_data, print_format="ticket"):
         webbrowser.open(os.path.realpath(file_path))
     except Exception as e:
         print(f"Error al generar el PDF: {e}")
+
+def generate_cash_balance_report(report_data):
+    """Genera un archivo PDF para el reporte de Cuadre de Caja."""
+    balance_date = report_data.get('date', datetime.now().date())
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    file_path = os.path.join('receipts', f'cuadre_caja_{balance_date.strftime("%Y%m%d")}_{timestamp}.pdf')
+    c = canvas.Canvas(file_path, pagesize=A4)
+    width, height = A4
+    margin = 20 * mm
+    try:
+        y_pos = height - margin
+        def draw_line(y_offset=4 * mm):
+            nonlocal y_pos
+            y_pos -= y_offset; c.line(margin, y_pos, width - margin, y_pos); y_pos -= y_offset
+        c.setFont("Helvetica-Bold", 18); c.drawCentredString(width / 2, y_pos, "Cuadre de Caja"); y_pos -= 8 * mm
+        c.setFont("Helvetica", 12); c.drawCentredString(width / 2, y_pos, f"Fecha: {balance_date.strftime('%d/%m/%Y')}"); y_pos -= 12 * mm
+        c.setFont("Helvetica-Bold", 14); c.drawString(margin, y_pos, "Ingresos (Ventas)"); draw_line()
+        c.setFont("Helvetica-Bold", 10); c.drawString(margin, y_pos, "ID Venta"); c.drawString(margin + 60*mm, y_pos, "Vendedor"); c.drawRightString(width - margin, y_pos, "Total"); y_pos -= 6 * mm
+        c.setFont("Helvetica", 10)
+        for sale in report_data.get('sales_list', []):
+            c.drawString(margin, y_pos, str(sale['id'])); c.drawString(margin + 60*mm, y_pos, str(sale.get('nombre_usuario', 'N/A'))); c.drawRightString(width - margin, y_pos, f"S/ {sale['total']:.2f}")
+            y_pos -= 5 * mm
+        y_pos -= 8 * mm
+        c.setFont("Helvetica-Bold", 14); c.drawString(margin, y_pos, "Egresos (Gastos)"); draw_line()
+        c.setFont("Helvetica-Bold", 10); c.drawString(margin, y_pos, "Descripción"); c.drawRightString(width - margin, y_pos, "Monto"); y_pos -= 6 * mm
+        c.setFont("Helvetica", 10)
+        for expense in report_data.get('expenses_list', []):
+            c.drawString(margin, y_pos, str(expense['descripcion'])); c.drawRightString(width - margin, y_pos, f"S/ {expense['monto']:.2f}")
+            y_pos -= 5 * mm
+        y_pos -= 15 * mm; draw_line(2*mm); y_pos -= 2*mm
+        c.setFont("Helvetica-Bold", 12)
+        c.drawRightString(width - margin - 40*mm, y_pos, "Total Ingresos:"); c.drawRightString(width - margin, y_pos, f"S/ {report_data.get('total_sales', 0.0):.2f}"); y_pos -= 7 * mm
+        c.drawRightString(width - margin - 40*mm, y_pos, "Total Egresos:"); c.drawRightString(width - margin, y_pos, f"S/ {report_data.get('total_expenses', 0.0):.2f}"); y_pos -= 7 * mm
+        c.setFont("Helvetica-Bold", 14)
+        c.drawRightString(width - margin - 40*mm, y_pos, "BALANCE DE CAJA:"); c.drawRightString(width - margin, y_pos, f"S/ {report_data.get('balance', 0.0):.2f}")
+        c.save()
+        webbrowser.open(os.path.realpath(file_path))
+    except Exception as e:
+        print(f"Error al generar PDF de cuadre: {e}")

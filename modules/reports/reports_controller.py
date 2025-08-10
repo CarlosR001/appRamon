@@ -1,5 +1,6 @@
 from . import reports_model as model
 from .daily_detail_view import DailyDetailView
+from modules.printing import pdf_generator
 from datetime import datetime, date
 
 class ReportsController:
@@ -7,6 +8,7 @@ class ReportsController:
         self.app_view = app_view
         self.reports_view = None
         self.detail_window = None
+        self.last_cash_balance_data = None # Para guardar los datos del último cuadre
 
     def set_view(self, view):
         self.reports_view = view
@@ -58,29 +60,31 @@ class ReportsController:
         self.reports_view.update_profit_summary(summary_data)
 
     def load_cash_balance_data(self):
-        """Carga los datos para la pestaña de Cuadre de Caja."""
         if not self.reports_view: return
-        try:
-            balance_date = self.reports_view.cash_balance_date.get_date()
-            balance_data = model.get_cash_balance_for_date(balance_date)
-            if balance_data:
-                self.reports_view.update_cash_balance(balance_data)
-        except Exception as e:
-            print(f"Error al cargar cuadre de caja: {e}")
+        balance_date = self.reports_view.cash_balance_date.get_date()
+        balance_data = model.get_cash_balance_for_date(balance_date)
+        if balance_data:
+            self.reports_view.update_cash_balance(balance_data)
+            # Guardar los datos para la impresión
+            self.last_cash_balance_data = balance_data
+            self.last_cash_balance_data['date'] = balance_date
 
+    def print_cash_balance(self):
+        """Genera el PDF del último cuadre de caja consultado."""
+        if self.last_cash_balance_data:
+            pdf_generator.generate_cash_balance_report(self.last_cash_balance_data)
+        else:
+            messagebox.showinfo("Sin Datos", "Por favor, genere un cuadre de caja primero antes de imprimir.", parent=self.app_view)
 
     def show_daily_details(self, event=None):
         if not self.reports_view: return
         selected_date_str = self.reports_view.get_selected_date()
         if not selected_date_str: return
-        
         try:
             sale_date = datetime.strptime(selected_date_str, '%d/%m/%Y').date()
         except ValueError: return
-            
         if self.detail_window and self.detail_window.winfo_exists():
             self.detail_window.focus(); return
-            
         sales_data = model.get_sales_details_for_date(sale_date)
         self.detail_window = DailyDetailView(self.app_view, sales_data, sale_date)
         self.detail_window.protocol("WM_DELETE_WINDOW", self._close_detail_window)

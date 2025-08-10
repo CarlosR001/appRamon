@@ -45,6 +45,7 @@ class ReportsView(ttk.Frame):
             self.filter_button.config(command=self.controller.load_daily_summary_data)
             self.profit_filter_button.config(command=self.controller.load_profit_summary_data)
             self.cash_balance_button.config(command=self.controller.load_cash_balance_data)
+            self.print_cash_balance_button.config(command=self.controller.print_cash_balance)
 
     def create_daily_summary_widgets(self):
         self.daily_summary_frame.columnconfigure(0, weight=1)
@@ -110,24 +111,45 @@ class ReportsView(ttk.Frame):
 
     def create_cash_balance_widgets(self):
         self.cash_balance_frame.columnconfigure(0, weight=1)
+        self.cash_balance_frame.rowconfigure(1, weight=1)
         filter_frame = ttk.Frame(self.cash_balance_frame, padding=(0, 5))
-        filter_frame.pack(fill="x", pady=(0,15))
+        filter_frame.grid(row=0, column=0, sticky="ew")
         if calendar_available:
             ttk.Label(filter_frame, text="Seleccionar Fecha:").pack(side="left", padx=(0, 5))
             self.cash_balance_date = DateEntry(filter_frame, date_pattern='dd/mm/yyyy', width=12)
             self.cash_balance_date.pack(side="left")
             self.cash_balance_button = ttk.Button(filter_frame, text="Generar Cuadre")
             self.cash_balance_button.pack(side="left", padx=10)
-        container = ttk.Frame(self.cash_balance_frame, style="Card.TFrame", padding=20)
-        container.pack(expand=True)
+            self.print_cash_balance_button = ttk.Button(filter_frame, text="Imprimir Cuadre")
+            self.print_cash_balance_button.pack(side="left", padx=5)
+        details_container = ttk.Frame(self.cash_balance_frame)
+        details_container.grid(row=1, column=0, sticky="nsew", pady=(10,0))
+        details_container.columnconfigure((0, 1), weight=1); details_container.rowconfigure(1, weight=1)
+        ttk.Label(details_container, text="Ingresos (Ventas)", font=("Segoe UI", 12, "bold")).grid(row=0, column=0, sticky="w")
+        sales_tree_frame = ttk.Frame(details_container)
+        sales_tree_frame.grid(row=1, column=0, sticky="nsew", padx=(0, 5))
+        sales_tree_frame.columnconfigure(0, weight=1); sales_tree_frame.rowconfigure(0, weight=1)
+        self.sales_balance_tree = ttk.Treeview(sales_tree_frame, columns=("id", "vendedor", "total"), show="headings")
+        self.sales_balance_tree.heading("id", text="ID Venta"); self.sales_balance_tree.heading("vendedor", text="Vendedor"); self.sales_balance_tree.heading("total", text="Total")
+        self.sales_balance_tree.column("id", width=60, anchor="c"); self.sales_balance_tree.column("vendedor", width=120); self.sales_balance_tree.column("total", width=90, anchor="e")
+        self.sales_balance_tree.grid(row=0, column=0, sticky="nsew")
+        ttk.Label(details_container, text="Egresos (Gastos)", font=("Segoe UI", 12, "bold")).grid(row=0, column=1, sticky="w")
+        expenses_tree_frame = ttk.Frame(details_container)
+        expenses_tree_frame.grid(row=1, column=1, sticky="nsew", padx=(5, 0))
+        expenses_tree_frame.columnconfigure(0, weight=1); expenses_tree_frame.rowconfigure(0, weight=1)
+        self.expenses_balance_tree = ttk.Treeview(expenses_tree_frame, columns=("desc", "monto"), show="headings")
+        self.expenses_balance_tree.heading("desc", text="Descripción"); self.expenses_balance_tree.heading("monto", text="Monto")
+        self.expenses_balance_tree.column("monto", width=90, anchor="e")
+        self.expenses_balance_tree.grid(row=0, column=0, sticky="nsew")
+        container = ttk.Frame(self.cash_balance_frame, style="Card.TFrame", padding=10)
+        container.grid(row=2, column=0, sticky="ew", pady=(10,0))
         self.cash_balance_vars = {"sales": tk.StringVar(value="S/ 0.00"),"expenses": tk.StringVar(value="S/ 0.00"),"balance": tk.StringVar(value="S/ 0.00")}
-        labels = [("(+) Total Ingresos por Ventas:", self.cash_balance_vars["sales"]),("(-) Total Egresos por Gastos:", self.cash_balance_vars["expenses"]),("(=) BALANCE DE CAJA:", self.cash_balance_vars["balance"])]
+        labels = [("(+) Total Ventas:", self.cash_balance_vars["sales"]),("(-) Total Gastos:", self.cash_balance_vars["expenses"]),("(=) BALANCE DE CAJA:", self.cash_balance_vars["balance"])]
         for i, (text, var) in enumerate(labels):
-            font_size = 16 if "BALANCE" in text else 12
-            font_weight = "bold" if "BALANCE" in text else "normal"
-            ttk.Label(container, text=text, font=("Segoe UI", font_size, font_weight)).grid(row=i, column=0, sticky="w", padx=10, pady=8)
-            ttk.Label(container, textvariable=var, font=("Segoe UI", font_size, font_weight)).grid(row=i, column=1, sticky="e", padx=10, pady=8)
-        ttk.Separator(container, orient="horizontal").grid(row=1, column=0, columnspan=2, sticky="ew", pady=10)
+            font_size = 14 if "BALANCE" in text else 11; font_weight = "bold" if "BALANCE" in text else "normal"
+            ttk.Label(container, text=text, font=("Segoe UI", font_size, font_weight)).grid(row=i, column=0, sticky="w", padx=5, pady=2)
+            ttk.Label(container, textvariable=var, font=("Segoe UI", font_size, font_weight)).grid(row=i, column=1, sticky="e", padx=5, pady=2)
+        container.columnconfigure(1, weight=1)
 
     def update_profit_summary(self, summary_data):
         revenue, cogs, expenses = summary_data.get('total_revenue', 0.0), summary_data.get('total_cogs', 0.0), summary_data.get('total_expenses', 0.0)
@@ -141,10 +163,17 @@ class ReportsView(ttk.Frame):
         sales, expenses = balance_data.get('total_sales', 0.0), balance_data.get('total_expenses', 0.0)
         balance = sales - expenses
         self.cash_balance_vars["sales"].set(f"S/ {sales:.2f}"); self.cash_balance_vars["expenses"].set(f"S/ {expenses:.2f}"); self.cash_balance_vars["balance"].set(f"S/ {balance:.2f}")
-        for child in self.cash_balance_frame.winfo_children()[1].winfo_children():
+        self.clear_cash_balance_trees()
+        for sale in balance_data.get('sales_list', []): self.sales_balance_tree.insert("", "end", values=(sale['id'], sale.get('nombre_usuario', 'N/A'), f"S/ {sale['total']:.2f}"))
+        for expense in balance_data.get('expenses_list', []): self.expenses_balance_tree.insert("", "end", values=(expense['descripcion'], f"S/ {expense['monto']:.2f}"))
+        for child in self.cash_balance_frame.winfo_children()[2].winfo_children():
             if isinstance(child, ttk.Label) and str(self.cash_balance_vars["balance"]) in str(child.cget("textvariable")):
                 child.config(foreground="#77dd77" if balance >= 0 else "#ff6961"); break
 
+    def clear_cash_balance_trees(self):
+        self.sales_balance_tree.delete(*self.sales_balance_tree.get_children())
+        self.expenses_balance_tree.delete(*self.expenses_balance_tree.get_children())
+        
     def add_daily_summary_to_tree(self, summary_item):
         fecha = summary_item['venta_fecha']; total = f"S/ {summary_item.get('total_vendido', 0.0):.2f}"
         if isinstance(fecha, date): fecha = fecha.strftime('%d/%m/%Y')
