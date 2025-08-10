@@ -21,7 +21,7 @@ class ReceiptView(tk.Toplevel):
         main_frame.rowconfigure(4, weight=1) # Fila de la tabla se expande
 
         # --- Header ---
-        ttk.Label(main_frame, text="ELECTRO-PRO", font=("Segoe UI", 16, "bold")).grid(row=0, column=0, columnspan=2, pady=(0,5))
+        ttk.Label(main_frame, text="Electronica Ramon Planta", font=("Segoe UI", 16, "bold")).grid(row=0, column=0, columnspan=2, pady=(0,5))
         ttk.Label(main_frame, text="Recibo de Venta", font=("Segoe UI", 10, "italic")).grid(row=1, column=0, columnspan=2, pady=(0, 10))
 
         # --- Sale Info ---

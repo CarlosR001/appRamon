@@ -53,7 +53,7 @@ def generate_receipt(receipt_data, print_format="ticket"):
 
         # --- Contenido del PDF ---
         # Encabezado
-        draw_text("ELECTRO-PRO", "Helvetica-Bold", font_size_large, 8 * mm, align="center")
+        draw_text("Electronica Ramon Planta", "Helvetica-Bold", font_size_large, 8 * mm, align="center")
         draw_text("Recibo de Venta", "Helvetica", font_size_small, 8 * mm, align="center")
 
         # Información de la venta
