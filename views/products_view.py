@@ -35,7 +35,6 @@ class ProductsView(ttk.Frame):
         self.clear_button.grid(row=0, column=3, sticky="e")
 
     def create_product_treeview(self):
-        # ... (código sin cambios)
         tree_frame = ttk.Frame(self)
         tree_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
         tree_frame.columnconfigure(0, weight=1)
@@ -60,29 +59,44 @@ class ProductsView(ttk.Frame):
         scrollbar.grid(row=0, column=1, sticky="ns")
 
     def create_action_buttons(self):
-        # ... (código sin cambios)
         button_frame = ttk.Frame(self)
-        button_frame.grid(row=2, column=0, sticky="w", padx=10, pady=(0, 10))
-        self.add_button = ttk.Button(button_frame, text="Añadir Producto", style="Accent.TButton")
+        button_frame.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 10))
+        
+        # --- Botones de la izquierda ---
+        left_button_frame = ttk.Frame(button_frame)
+        left_button_frame.pack(side="left")
+
+        self.add_button = ttk.Button(left_button_frame, text="Añadir Producto", style="Accent.TButton")
         self.add_button.pack(side="left", padx=(0, 5))
+
         edit_state = tk.NORMAL if self.is_admin else tk.DISABLED
-        self.edit_button = ttk.Button(button_frame, text="Editar Producto", state=edit_state)
+        self.edit_button = ttk.Button(left_button_frame, text="Editar Producto", state=edit_state)
         self.edit_button.pack(side="left", padx=5)
+
         delete_state = tk.NORMAL if self.is_admin else tk.DISABLED
-        self.delete_button = ttk.Button(button_frame, text="Eliminar Producto", state=delete_state)
+        self.delete_button = ttk.Button(left_button_frame, text="Eliminar Producto", state=delete_state)
         self.delete_button.pack(side="left", padx=5)
+
+        # --- Botones de la derecha ---
+        right_button_frame = ttk.Frame(button_frame)
+        right_button_frame.pack(side="right")
+
+        category_state = tk.NORMAL if self.is_admin else tk.DISABLED
+        self.manage_categories_button = ttk.Button(right_button_frame, text="Gestionar Categorías", state=category_state)
+        self.manage_categories_button.pack(side="right")
 
     def set_controller(self, controller):
         """Asigna el controlador a los comandos de los botones."""
         self.add_button.config(command=controller.show_add_product_window)
         self.search_button.config(command=controller.search_products)
         self.clear_button.config(command=controller.clear_search)
+        
         if self.is_admin:
             self.edit_button.config(command=controller.show_edit_product_window)
             self.delete_button.config(command=controller.delete_selected_product)
+            self.manage_categories_button.config(command=controller.show_categories_manager)
         
     def add_product_to_tree(self, product):
-        # ... (código sin cambios)
         precio_formateado = f"S/ {product.get('precio_venta', 0.0):.2f}"
         self.tree.insert("", tk.END, iid=product['id'], values=(
             product['id'],
@@ -94,14 +108,11 @@ class ProductsView(ttk.Frame):
         ))
     
     def get_selected_item_id(self):
-        # ... (código sin cambios)
         selection = self.tree.selection()
         if selection:
             return int(self.tree.item(selection[0])['values'][0])
         return None
 
     def clear_tree(self):
-        # ... (código sin cambios)
         for i in self.tree.get_children():
             self.tree.delete(i)
-

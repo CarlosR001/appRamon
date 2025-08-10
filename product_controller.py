@@ -1,7 +1,10 @@
+from tkinter import messagebox
+
+from modules.categories.category_controller import CategoryController
 from views.add_product_view import AddProductView
 from views.edit_product_view import EditProductView
 import product_model as p_model
-from tkinter import messagebox
+
 
 class ProductController:
     def __init__(self, app_view):
@@ -60,7 +63,7 @@ class ProductController:
         product_id = p_model.add_product(data)
         if product_id:
             messagebox.showinfo("Éxito", "Producto añadido correctamente.", parent=self.app_view)
-            self.load_products() # <<-- CORRECCIÓN CLAVE
+            self.load_products()
         else:
             messagebox.showerror("Error de Base de Datos", "No se pudo añadir el producto a la base de datos.", parent=self.app_view)
 
@@ -77,7 +80,7 @@ class ProductController:
         success = p_model.update_product(product_id, data)
         if success:
             messagebox.showinfo("Éxito", "Producto actualizado correctamente.", parent=self.app_view)
-            self.load_products() # <<-- CORRECCIÓN CLAVE
+            self.load_products()
         else:
             messagebox.showerror("Error de Base de Datos", "No se pudo actualizar el producto.", parent=self.app_view)
 
@@ -94,6 +97,13 @@ class ProductController:
                 success = p_model.delete_product(selected_product['id'])
                 if success:
                     messagebox.showinfo("Éxito", "Producto eliminado correctamente.", parent=self.app_view)
-                    self.load_products() # <<-- CORRECCIÓN CLAVE
+                    self.load_products()
                 else:
                     messagebox.showerror("Error de Base de Datos", "No se pudo eliminar el producto.", parent=self.app_view)
+
+    def show_categories_manager(self):
+        """Lanza el módulo de gestión de categorías."""
+        category_controller = CategoryController(self.app_view)
+        category_controller.show_view()
+        # Al cerrar, recargamos los productos por si una categoría cambió
+        self.load_products()
