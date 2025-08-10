@@ -7,40 +7,41 @@ class ReportsController:
         self.app_view = app_view
         self.reports_view = None
         self.detail_window = None
-        self.data_loaded = {"daily": False, "product": False, "profit": False}
 
     def set_view(self, view):
         self.reports_view = view
         self.reports_view.set_controller(self)
 
     def load_data(self):
-        """Carga los datos para la pestaña inicial (Resumen Diario)."""
-        self.load_daily_summary_data()
+        """Carga los datos para la pestaña inicial (Resumen Diario) sin filtro."""
+        self.load_daily_summary_data(use_filter=False)
 
     def on_tab_changed(self, event):
-        """Se activa cuando el usuario cambia de pestaña."""
+        """Se activa cuando el usuario cambia de pestaña para una carga inicial."""
         selected_tab_index = self.reports_view.notebook.index(self.reports_view.notebook.select())
-        
-        if selected_tab_index == 0: # Pestaña de Resumen Diario
-            if not self.data_loaded["daily"]:
-                self.load_daily_summary_data()
-        elif selected_tab_index == 1: # Pestaña de Ventas por Producto
-            if not self.data_loaded["product"]:
-                self.load_product_sales_data()
-        elif selected_tab_index == 2: # Pestaña de Resumen de Ganancias
-            # Siempre recargamos las ganancias por si se registró un nuevo gasto o venta
-            self.load_profit_summary_data()
+        if selected_tab_index == 0:
+            self.load_daily_summary_data(use_filter=False)
+        elif selected_tab_index == 1:
+            self.load_product_sales_data()
+        elif selected_tab_index == 2:
+            self.load_profit_summary_data(use_filter=False)
 
-    def load_daily_summary_data(self):
+    def load_daily_summary_data(self, use_filter=True):
         if not self.reports_view: return
+        start_date, end_date = None, None
+        if use_filter:
+            try:
+                start_date = self.reports_view.start_date_entry.get_date()
+                end_date = self.reports_view.end_date_entry.get_date()
+            except AttributeError: # tkcalendar no instalado
+                pass
+        
         self.reports_view.clear_daily_summary_tree()
-        daily_summary = model.get_daily_sales_summary()
-        total_revenue = 0
+        daily_summary = model.get_daily_sales_summary(start_date, end_date)
+        total_revenue = sum(item.get('total_vendido', 0) for item in daily_summary)
         for item in daily_summary:
             self.reports_view.add_daily_summary_to_tree(item)
-            total_revenue += item.get('total_vendido', 0)
         self.reports_view.update_summary_footer(total_revenue)
-        self.data_loaded["daily"] = True
 
     def load_product_sales_data(self):
         if not self.reports_view: return
@@ -48,14 +49,19 @@ class ReportsController:
         product_sales = model.get_sales_by_product()
         for item in product_sales:
             self.reports_view.add_product_sale_to_tree(item)
-        self.data_loaded["product"] = True
 
-    def load_profit_summary_data(self):
-        """Carga los datos para la pestaña de Resumen de Ganancias."""
+    def load_profit_summary_data(self, use_filter=True):
         if not self.reports_view: return
-        summary_data = model.get_profit_summary()
+        start_date, end_date = None, None
+        if use_filter:
+            try:
+                start_date = self.reports_view.profit_start_date.get_date()
+                end_date = self.reports_view.profit_end_date.get_date()
+            except AttributeError: # tkcalendar no instalado
+                pass
+        
+        summary_data = model.get_profit_summary(start_date, end_date)
         self.reports_view.update_profit_summary(summary_data)
-        self.data_loaded["profit"] = True
 
     def show_daily_details(self, event=None):
         if not self.reports_view: return
@@ -64,12 +70,10 @@ class ReportsController:
         
         try:
             sale_date = datetime.strptime(selected_date_str, '%d/%m/%Y').date()
-        except ValueError:
-            return
+        except ValueError: return
             
         if self.detail_window and self.detail_window.winfo_exists():
-            self.detail_window.focus()
-            return
+            self.detail_window.focus(); return
             
         sales_data = model.get_sales_details_for_date(sale_date)
         self.detail_window = DailyDetailView(self.app_view, sales_data, sale_date)
