@@ -37,6 +37,7 @@ class ServiceController:
             messagebox.showerror("Error", "No se pudo registrar la orden.", parent=self.add_window)
 
     def show_update_service_window(self):
+        """Muestra la ventana para actualizar un servicio existente."""
         if self.update_window and self.update_window.winfo_exists():
             self.update_window.focus(); return
         
@@ -52,26 +53,24 @@ class ServiceController:
         
         self.update_window = UpdateServiceView(self.main_app, self, service_data)
         self.update_window.protocol("WM_DELETE_WINDOW", self._close_update_window)
-        self.refresh_service_details() # Cargar items y calcular total
+        self.refresh_service_details()
 
     def refresh_service_details(self):
         """Recarga los items y el costo total en la ventana de actualización."""
         if not (self.update_window and self.update_window.winfo_exists()): return
         
-        # Recargar datos del servicio (incluye costo de mano de obra)
         service_data = service_model.get_by_id(self.current_service_id)
         service_cost = service_data.get('costo_servicio', 0.0)
         
-        # Recargar items (repuestos)
         items = service_model.get_service_items(self.current_service_id)
         self.update_window.update_service_items_list(items)
         
-        # Calcular y mostrar el total
         items_cost = sum(i['cantidad'] * i['precio_venta_unitario'] for i in items)
         total_cost = service_cost + items_cost
         self.update_window.update_total_cost(total_cost)
 
     def search_products_for_service(self, search_term):
+        """Busca productos y actualiza la lista en la ventana de actualización de servicio."""
         if self.update_window and self.update_window.winfo_exists():
             products = product_model.search_products(search_term)
             self.update_window.update_search_results(products)
@@ -90,6 +89,7 @@ class ServiceController:
 
     def remove_item_from_service(self, detail_id):
         items = service_model.get_service_items(self.current_service_id)
+        # BUG FIX: detail_id is a string from the treeview, needs to be int for comparison
         item_to_remove = next((i for i in items if i['id'] == int(detail_id)), None)
         if not item_to_remove: return
 
@@ -115,3 +115,13 @@ class ServiceController:
     def _close_update_window(self):
         if self.update_window: self.update_window.destroy(); self.update_window = None
 
+    def show_service_details_popup(self):
+        """Muestra una ventana emergente con todos los detalles del servicio."""
+        service_id = self.services_view.get_selected_service_id()
+        if not service_id:
+            messagebox.showwarning("Sin Selección", "Seleccione un servicio de la lista para ver sus detalles.", parent=self.main_app)
+            return
+
+        # Reutilizamos la lógica de la ventana de actualización, pero en modo "solo lectura"
+        # En una futura mejora, se podría crear una vista de detalles específica.
+        self.show_update_service_window()

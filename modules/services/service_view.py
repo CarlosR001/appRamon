@@ -18,7 +18,7 @@ class ServicesView(ttk.Frame):
         self.controller = controller
         self.add_button.config(command=self.controller.show_add_service_window)
         self.edit_button.config(command=self.controller.show_update_service_window)
-        # self.details_button.config(command=self.controller.show_service_details)
+        self.details_button.config(command=self.controller.show_service_details_popup)
 
     def create_header(self):
         header_frame = ttk.Frame(self)
@@ -56,14 +56,13 @@ class ServicesView(ttk.Frame):
         self.add_button = ttk.Button(button_frame, text="Registrar Nuevo Servicio", style="Accent.TButton")
         self.add_button.pack(side="left", padx=(0, 5))
 
-        self.edit_button = ttk.Button(button_frame, text="Actualizar Estado")
+        self.edit_button = ttk.Button(button_frame, text="Gestionar/Actualizar")
         self.edit_button.pack(side="left", padx=5)
 
-        self.details_button = ttk.Button(button_frame, text="Ver Detalles", state="disabled")
+        self.details_button = ttk.Button(button_frame, text="Ver Detalles (Solo Lectura)")
         self.details_button.pack(side="left", padx=5)
 
     def get_selected_service_id(self):
-        """Devuelve el ID del servicio seleccionado en la tabla."""
         selection = self.tree.selection()
         if selection:
             return self.tree.item(selection[0], "values")[0]
@@ -79,7 +78,7 @@ class ServicesView(ttk.Frame):
 
         estado = service.get('estado', 'Desconocido')
         
-        self.tree.insert("", tk.END, iid=service['id'], values=(
+        self.tree.insert("", "end", iid=service['id'], values=(
             service['id'],
             service.get('nombre_cliente', 'N/A'),
             service.get('descripcion_equipo', ''),

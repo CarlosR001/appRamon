@@ -28,14 +28,15 @@ class PurchaseController:
                     product.get('id')
                 ))
 
-    def add_product_to_cart(self, product_id, cost):
+    def add_product_to_cart(self, product_id, quantity, cost):
+        """Añade un producto al carrito con cantidad y costo (CORREGIDO)."""
         if product_id in self.cart:
-            self.cart[product_id]['qty'] += 1
+            self.cart[product_id]['qty'] += quantity
             self.cart[product_id]['cost'] = cost # Actualizar al último costo ingresado
         else:
             product_data = product_model.get_by_id(product_id)
             if product_data:
-                self.cart[product_id] = {'data': product_data, 'qty': 1, 'cost': cost}
+                self.cart[product_id] = {'data': product_data, 'qty': quantity, 'cost': cost}
         self.update_cart_display()
 
     def update_cart_display(self):
