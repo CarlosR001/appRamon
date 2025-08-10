@@ -1,5 +1,6 @@
 from database import get_db_connection
 from mysql.connector import Error
+from datetime import date
 
 def get_daily_sales_summary():
     """Recupera un resumen de las ventas totales agrupadas por fecha."""
@@ -25,7 +26,7 @@ def get_daily_sales_summary():
         cursor.close()
         conn.close()
 
-def get_sales_details_for_date(sale_date):
+def get_sales_details_for_date(sale_date_obj):
     """
     Recupera todas las ventas de una fecha específica con sus detalles.
     """
@@ -33,9 +34,12 @@ def get_sales_details_for_date(sale_date):
     if not conn: return []
     
     cursor = conn.cursor(dictionary=True)
-    sales_details = []
     
     try:
+        # CORRECCIÓN: Convertir el objeto de fecha a un string YYYY-MM-DD
+        # Esto asegura que la consulta a MySQL sea siempre correcta.
+        sale_date_str = sale_date_obj.strftime('%Y-%m-%d')
+
         # 1. Obtener todas las ventas de esa fecha
         query_sales = """
             SELECT v.id, v.fecha, v.total, c.nombre as cliente_nombre
@@ -44,8 +48,11 @@ def get_sales_details_for_date(sale_date):
             WHERE DATE(v.fecha) = %s
             ORDER BY v.fecha ASC;
         """
-        cursor.execute(query_sales, (sale_date,))
+        cursor.execute(query_sales, (sale_date_str,))
         sales = cursor.fetchall()
+
+        if not sales:
+            return []
 
         # 2. Para cada venta, obtener sus productos
         query_items = """
@@ -57,9 +64,8 @@ def get_sales_details_for_date(sale_date):
         for sale in sales:
             cursor.execute(query_items, (sale['id'],))
             sale['items'] = cursor.fetchall()
-            sales_details.append(sale)
             
-        return sales_details
+        return sales
 
     except Error as e:
         print(f"Error al obtener los detalles de ventas por fecha: {e}")
