@@ -51,7 +51,7 @@ class AddProductView(tk.Toplevel):
         button_frame = ttk.Frame(frame)
         button_frame.grid(row=len(fields), column=0, columnspan=2, pady=20)
         
-        save_button = ttk.Button(button_frame, text="Guardar", command=self.save)
+        save_button = ttk.Button(button_frame, text="Guardar", command=self.save, style="Accent.TButton")
         save_button.pack(side="left", padx=10)
 
         cancel_button = ttk.Button(button_frame, text="Cancelar", command=self.destroy)
@@ -84,8 +84,8 @@ class AddProductView(tk.Toplevel):
             
             data['id_categoria'] = cat_id
             
-            # Pasar los datos al controlador a través del método de la ventana principal
-            self.parent.controller.save_new_product(data)
+            # PASO CORREGIDO: Llamar al controlador de productos correctamente
+            self.parent.controllers['products'].save_new_product(data)
             self.destroy()
 
         except tk.TclError as e:
