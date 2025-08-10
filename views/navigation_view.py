@@ -34,7 +34,10 @@ class NavigationView(ttk.Frame):
         self.expenses_button = ttk.Button(self, text="💸  Gastos", command=self.app_controller.show_expenses_view, state=admin_state)
         self.expenses_button.grid(row=6, column=0, sticky="ew", pady=2)
 
-        self.grid_rowconfigure(7, weight=1) # Ajustar el espaciador
+        self.suppliers_button = ttk.Button(self, text="🚚  Proveedores", command=self.app_controller.show_suppliers_view, state=admin_state)
+        self.suppliers_button.grid(row=7, column=0, sticky="ew", pady=2)
+
+        self.grid_rowconfigure(8, weight=1) # Ajustar el espaciador
 
         self.settings_button = ttk.Button(self, text="⚙️  Configuración", state="disabled")
-        self.settings_button.grid(row=8, column=0, sticky="ew", pady=10)
+        self.settings_button.grid(row=9, column=0, sticky="ew", pady=10)

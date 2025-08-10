@@ -15,6 +15,7 @@ from modules.reports.reports_view import ReportsView
 from modules.clients.client_view import ClientsView
 from modules.services.service_view import ServicesView
 from modules.expenses.expense_view import ExpensesView
+from modules.suppliers.supplier_view import SupplierView
 
 # Controladores
 from product_controller import ProductController
@@ -23,6 +24,7 @@ from modules.reports.reports_controller import ReportsController
 from modules.clients.client_controller import ClientController
 from modules.services.service_controller import ServiceController
 from modules.expenses.expense_controller import ExpenseController
+from modules.suppliers.supplier_controller import SupplierController
 
 
 class LoginWindow(tk.Tk):
@@ -41,12 +43,10 @@ class LoginWindow(tk.Tk):
         self.username_label.pack(pady=(10, 0))
         self.username_entry = ttk.Entry(self)
         self.username_entry.pack(pady=5, padx=20, fill="x")
-
         self.password_label = ttk.Label(self, text="Contraseña:")
         self.password_label.pack(pady=(10, 0))
         self.password_entry = ttk.Entry(self, show="*")
         self.password_entry.pack(pady=5, padx=20, fill="x")
-
         self.login_button = ttk.Button(self, text="Ingresar", command=self.attempt_login, style="Accent.TButton")
         self.login_button.pack(pady=10)
 
@@ -68,13 +68,11 @@ class LoginWindow(tk.Tk):
         if not conn:
             messagebox.showerror("Error de Conexión", "No se pudo conectar a la base de datos.")
             return
-        
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT password_hash, id_rol FROM usuarios WHERE nombre_usuario = %s", (username,))
         user_data = cursor.fetchone()
         cursor.close()
         conn.close()
-
         if user_data and verify_password(user_data['password_hash'], password):
             self.destroy()
             main_app = App(user_data['id_rol'])
@@ -87,29 +85,21 @@ class App(tk.Tk):
     def __init__(self, user_role):
         super().__init__()
         self.user_role = user_role
-        
         sv_ttk.set_theme("dark")
-        
         self.title("Electro-Pro: Sistema de Gestión")
         self.geometry("1280x720")
         self.minsize(1100, 650)
-
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
-        
         self.views = {}
         self.controllers = {}
-        
         self.create_views()
         self.initialize_controllers()
-        
         self.show_sales_view()
 
     def create_views(self):
-        """Crea el layout principal y todas las vistas de los módulos."""
         self.navigation_view = NavigationView(self, self)
         self.navigation_view.grid(row=0, column=0, sticky="nsw")
-        
         self.main_content_frame = ttk.Frame(self)
         self.main_content_frame.grid(row=0, column=1, sticky="nsew")
         self.main_content_frame.grid_rowconfigure(0, weight=1)
@@ -121,33 +111,28 @@ class App(tk.Tk):
         self.views['clients'] = ClientsView(self.main_content_frame)
         self.views['services'] = ServicesView(self.main_content_frame)
         self.views['expenses'] = ExpensesView(self.main_content_frame)
+        self.views['suppliers'] = SupplierView(self.main_content_frame)
 
     def initialize_controllers(self):
-        """Crea todas las instancias de los controladores."""
         self.controllers['products'] = ProductController(self)
-        
         sales_controller = SalesController(self)
         sales_controller.set_view(self.views['sales'])
         self.controllers['sales'] = sales_controller
-
         reports_controller = ReportsController(self)
         reports_controller.set_view(self.views['reports'])
         self.controllers['reports'] = reports_controller
-
         client_controller = ClientController(self)
         self.controllers['clients'] = client_controller
-
         service_controller = ServiceController(self)
         self.controllers['services'] = service_controller
-
         expense_controller = ExpenseController(self)
         self.controllers['expenses'] = expense_controller
+        supplier_controller = SupplierController(self)
+        self.controllers['suppliers'] = supplier_controller
 
     def show_view(self, view_name):
-        """Oculta todas las vistas y muestra solo la seleccionada."""
         for view in self.views.values():
             view.grid_remove()
-        
         view_to_show = self.views.get(view_name)
         if view_to_show:
             view_to_show.grid(row=0, column=0, sticky="nsew")
@@ -173,10 +158,13 @@ class App(tk.Tk):
         self.controllers['services'].load_all_services()
 
     def show_expenses_view(self):
-        """Muestra la vista de gastos y carga los datos."""
         self.show_view('expenses')
         self.controllers['expenses'].load_all_expenses()
 
+    def show_suppliers_view(self):
+        """Muestra la vista de proveedores y carga los datos."""
+        self.show_view('suppliers')
+        self.controllers['suppliers'].load_all_suppliers()
 
 if __name__ == "__main__":
     login_window = LoginWindow()
