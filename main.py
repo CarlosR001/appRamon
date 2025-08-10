@@ -2,15 +2,18 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import sv_ttk
-
 # Importaciones de la aplicación
 from database import get_db_connection
 from auth import verify_password
 from views.products_view import ProductsView
 from views.navigation_view import NavigationView
 from views.sales_view import SalesView
+# Modelos
+import product_model as p_model
+# Controladores
 from product_controller import ProductController
 from sales_controller import SalesController
+
 
 class LoginWindow(tk.Tk):
     # --- El código de LoginWindow no cambia, está correcto ---
@@ -28,10 +31,12 @@ class LoginWindow(tk.Tk):
         self.username_label.pack(pady=(10, 0))
         self.username_entry = ttk.Entry(self)
         self.username_entry.pack(pady=5, padx=20, fill="x")
+
         self.password_label = ttk.Label(self, text="Contraseña:")
         self.password_label.pack(pady=(10, 0))
         self.password_entry = ttk.Entry(self, show="*")
         self.password_entry.pack(pady=5, padx=20, fill="x")
+
         self.login_button = ttk.Button(self, text="Ingresar", command=self.attempt_login, style="Accent.TButton")
         self.login_button.pack(pady=10)
 
@@ -53,11 +58,13 @@ class LoginWindow(tk.Tk):
         if not conn:
             messagebox.showerror("Error de Conexión", "No se pudo conectar a la base de datos.")
             return
+        
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT password_hash, id_rol FROM usuarios WHERE nombre_usuario = %s", (username,))
         user_data = cursor.fetchone()
         cursor.close()
         conn.close()
+
         if user_data and verify_password(user_data['password_hash'], password):
             self.destroy()
             main_app = App(user_data['id_rol'])
@@ -65,39 +72,41 @@ class LoginWindow(tk.Tk):
         else:
             messagebox.showerror("Error", "Usuario o contraseña incorrectos.")
 
+
 class App(tk.Tk):
     def __init__(self, user_role):
         super().__init__()
         self.user_role = user_role
+        
         sv_ttk.set_theme("dark")
-
+        
         self.title("Electro-Pro: Sistema de Gestión")
         self.geometry("1280x720")
         self.minsize(1100, 650)
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
-
+        
         self.views = {}
         self.controllers = {}
         
         self.create_views()
         self.initialize_controllers()
         
-        # Iniciar en la vista de ventas por defecto, es más práctico
+        # Iniciar en la vista de ventas por defecto
         self.show_sales_view()
 
     def create_views(self):
         """Crea el layout principal y todas las vistas de los módulos."""
         self.navigation_view = NavigationView(self, self)
         self.navigation_view.grid(row=0, column=0, sticky="nsw")
-
+        
         self.main_content_frame = ttk.Frame(self)
         self.main_content_frame.grid(row=0, column=1, sticky="nsew")
         self.main_content_frame.grid_rowconfigure(0, weight=1)
         self.main_content_frame.grid_columnconfigure(0, weight=1)
-
-        # Crear vistas y guardarlas en el diccionario para fácil acceso
+        
+        # Crear vistas y guardarlas en el diccionario
         self.views['inventory'] = ProductsView(self.main_content_frame, self.user_role)
         self.views['sales'] = SalesView(self.main_content_frame)
 
@@ -105,7 +114,6 @@ class App(tk.Tk):
         """Crea todas las instancias de los controladores."""
         self.controllers['products'] = ProductController(self)
         
-        # Conectar el controlador de ventas con su vista
         sales_controller = SalesController(self)
         sales_controller.set_view(self.views['sales'])
         self.controllers['sales'] = sales_controller
@@ -127,7 +135,6 @@ class App(tk.Tk):
     def show_sales_view(self):
         """Muestra la vista de ventas."""
         self.show_view('sales')
-        # Lógica de carga para la vista de ventas, si fuera necesaria en el futuro
         self.controllers['sales'].search_products_for_sale("") # Limpia la búsqueda
 
 if __name__ == "__main__":
