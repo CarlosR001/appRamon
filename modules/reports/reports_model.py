@@ -61,9 +61,7 @@ def get_sales_details_for_date(sale_date_obj):
         conn.close()
 
 def get_sales_by_product():
-    """
-    Recupera un resumen de ventas agrupado por producto.
-    """
+    """Recupera un resumen de ventas agrupado por producto."""
     conn = get_db_connection()
     if not conn: return []
     cursor = conn.cursor(dictionary=True)
@@ -84,6 +82,48 @@ def get_sales_by_product():
     except Error as e:
         print(f"Error al obtener el resumen de ventas por producto: {e}")
         return []
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_profit_summary():
+    """
+    Calcula un resumen financiero completo: ingresos, costos, gastos y ganancia neta.
+    """
+    conn = get_db_connection()
+    if not conn: return {}
+    cursor = conn.cursor(dictionary=True)
+    summary = {
+        'total_revenue': 0.0,
+        'total_cogs': 0.0,      # Cost of Goods Sold (Costo de Mercancía Vendida)
+        'total_expenses': 0.0
+    }
+    try:
+        # 1. Calcular Ingresos Totales y Costo de Mercancía Vendida
+        query_sales_profit = """
+            SELECT
+                SUM(dv.cantidad * dv.precio_unitario) as total_revenue,
+                SUM(dv.cantidad * p.precio_compra) as total_cogs
+            FROM detalle_ventas dv
+            JOIN productos p ON dv.id_producto = p.id;
+        """
+        cursor.execute(query_sales_profit)
+        sales_profit_data = cursor.fetchone()
+        if sales_profit_data and sales_profit_data['total_revenue'] is not None:
+            summary['total_revenue'] = float(sales_profit_data['total_revenue'])
+            summary['total_cogs'] = float(sales_profit_data['total_cogs'])
+
+        # 2. Calcular Gastos Operativos Totales
+        query_expenses = "SELECT SUM(monto) as total_expenses FROM gastos;"
+        cursor.execute(query_expenses)
+        expenses_data = cursor.fetchone()
+        if expenses_data and expenses_data['total_expenses'] is not None:
+            summary['total_expenses'] = float(expenses_data['total_expenses'])
+
+        return summary
+    except Error as e:
+        print(f"Error al calcular el resumen de ganancias: {e}")
+        return {}
     finally:
         cursor.close()
         conn.close()
