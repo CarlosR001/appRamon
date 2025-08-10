@@ -31,64 +31,64 @@ class SalesController:
                 ))
 
     def add_product_to_cart(self, product_id, quantity):
-        """Añade un producto al carrito con una cantidad específica (CORREGIDO)."""
         if product_id in self.cart:
-            # Si el producto ya está, sumamos la nueva cantidad
             current_qty = self.cart[product_id]['qty']
             stock = self.cart[product_id]['data']['stock']
-            
             if (current_qty + quantity) <= stock:
                 self.cart[product_id]['qty'] += quantity
             else:
-                # No se puede añadir la cantidad solicitada, mostrar advertencia
                 available = stock - current_qty
-                messagebox.showwarning("Stock Insuficiente", f"Solo puedes añadir {available} unidades más de este producto.", parent=self.sales_view)
-                return
+                messagebox.showwarning("Stock Insuficiente", f"Solo puedes añadir {available} unidades más.", parent=self.sales_view)
         else:
-            # Si es un producto nuevo, lo buscamos en la BD
             product_data = p_model.get_by_id(product_id)
-            if product_data:
-                # La vista ya valida la cantidad contra el stock, esto es una doble seguridad
-                if product_data['stock'] >= quantity:
-                    self.cart[product_id] = {'data': product_data, 'qty': quantity}
-                else:
-                    messagebox.showwarning("Sin Stock", "No hay suficiente stock para la cantidad solicitada.", parent=self.sales_view)
-                    return
+            if product_data and product_data['stock'] >= quantity:
+                self.cart[product_id] = {'data': product_data, 'qty': quantity}
             else:
-                messagebox.showerror("Error", f"No se pudo encontrar el producto con ID {product_id}.", parent=self.sales_view)
-                return
-        
+                messagebox.showwarning("Sin Stock", "No hay suficiente stock para la cantidad solicitada.", parent=self.sales_view)
         self.update_cart_display()
+
+    def get_cart_item_data(self, product_id):
+        return self.cart.get(product_id)
+
+    def update_cart_item_price(self, product_id, new_price):
+        if product_id in self.cart:
+            self.cart[product_id]['price_override'] = new_price
+            self.update_cart_display()
 
     def update_cart_display(self):
         if not self.sales_view: return
         tree = self.sales_view.cart_tree; tree.delete(*tree.get_children())
         total_sale = 0
         for product_id, item in self.cart.items():
-            qty, name, price = item['qty'], item['data'].get('nombre', ''), item['data'].get('precio_venta', 0.0)
-            subtotal = qty * price; total_sale += subtotal
+            qty = item['qty']
+            name = item['data'].get('nombre', '')
+            price = item.get('price_override', item['data'].get('precio_venta', 0.0))
+            subtotal = qty * price
+            total_sale += subtotal
             tree.insert("", tk.END, values=(product_id, qty, name, f"S/ {price:.2f}", f"S/ {subtotal:.2f}"))
         self.sales_view.total_var.set(f"S/ {total_sale:.2f}")
 
     def increase_cart_item_qty(self):
         selected_id = self.sales_view.get_selected_cart_item_id()
-        if selected_id in self.cart:
-            if self.cart[selected_id]['qty'] < self.cart[selected_id]['data']['stock']:
-                self.cart[selected_id]['qty'] += 1
-                self.update_cart_display()
-            else: messagebox.showwarning("Stock Insuficiente", "No hay más stock disponible.", parent=self.sales_view)
+        if selected_id in self.cart and self.cart[selected_id]['qty'] < self.cart[selected_id]['data']['stock']:
+            self.cart[selected_id]['qty'] += 1
+            self.update_cart_display()
+        elif selected_id:
+            messagebox.showwarning("Stock Insuficiente", "No hay más stock disponible.", parent=self.sales_view)
 
     def decrease_cart_item_qty(self):
         selected_id = self.sales_view.get_selected_cart_item_id()
         if selected_id in self.cart:
             self.cart[selected_id]['qty'] -= 1
-            if self.cart[selected_id]['qty'] == 0: del self.cart[selected_id]
+            if self.cart[selected_id]['qty'] == 0:
+                del self.cart[selected_id]
             self.update_cart_display()
 
     def remove_cart_item(self):
         selected_id = self.sales_view.get_selected_cart_item_id()
         if selected_id in self.cart:
-            del self.cart[selected_id]; self.update_cart_display()
+            del self.cart[selected_id]
+            self.update_cart_display()
 
     def show_client_search_popup(self):
         popup = tk.Toplevel(self.app_view); popup.title("Seleccionar Cliente"); popup.geometry("450x300"); popup.transient(self.app_view); popup.grab_set()
@@ -114,7 +114,7 @@ class SalesController:
 
     def process_sale(self):
         if not self.cart: messagebox.showinfo("Carrito Vacío", "Añada productos para realizar una venta.", parent=self.sales_view); return
-        total = sum(item['qty'] * item['data']['precio_venta'] for item in self.cart.values())
+        total = sum(item['qty'] * item.get('price_override', item['data']['precio_venta']) for item in self.cart.values())
         client_info = f"para {self.sales_view.selected_client_var.get()}" if self.selected_client_id else "como venta general"
         answer = messagebox.askyesno("Confirmar Venta", f"El total de la venta es S/ {total:.2f} {client_info}. ¿Desea continuar?", parent=self.sales_view)
         if answer:

@@ -4,7 +4,7 @@ from mysql.connector import Error
 def record_sale(cart_data, total, client_id=None, user_id=None):
     """
     Registra una venta, incluyendo el ID del cliente (opcional) y el ID del usuario.
-    Devuelve el ID de la nueva venta si tiene éxito, o None si falla.
+    Utiliza el precio especial (price_override) si existe en el carrito.
     """
     conn = get_db_connection()
     if not conn: return None
@@ -20,10 +20,16 @@ def record_sale(cart_data, total, client_id=None, user_id=None):
         query_update_stock = "UPDATE productos SET stock = stock - %s WHERE id = %s"
         
         for product_id, item in cart_data.items():
-            product, quantity = item['data'], item['qty']
+            product = item['data']
+            quantity = item['qty']
+            
+            # CORRECCIÓN CLAVE: Usar el precio especial si existe, de lo contrario, el de la BD.
+            final_price = item.get('price_override', product['precio_venta'])
+            
             if quantity > product['stock']:
                 raise Error(f"Stock insuficiente para {product['nombre']}")
-            cursor.execute(query_detalle, (id_venta, product['id'], quantity, product['precio_venta']))
+                
+            cursor.execute(query_detalle, (id_venta, product['id'], quantity, final_price))
             cursor.execute(query_update_stock, (quantity, product['id']))
 
         conn.commit()
