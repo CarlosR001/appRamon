@@ -1,5 +1,5 @@
+mysql-connector-python
 Pillow
 sv-ttk
 tkcalendar
 reportlab
-pyinstaller

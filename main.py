@@ -3,8 +3,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import sv_ttk
 
-# Módulo de setup de la base de datos
-import db_setup 
+# Importaciones de la aplicación
+from database import get_db_connection
 from auth import verify_and_get_user
 
 # Vistas
@@ -155,11 +155,19 @@ def start_application():
         app = App(user_data, on_logout_callback=start_application)
         app.mainloop()
 
-    login_window = LoginWindow(on_success_callback=run_main_app)
-    login_window.mainloop()
+    # Verificar conexión a la BD antes de iniciar
+    conn = get_db_connection()
+    if conn:
+        conn.close()
+        login_window = LoginWindow(on_success_callback=run_main_app)
+        login_window.mainloop()
+    else:
+        messagebox.showerror("Error de Conexión Crítico", 
+                             "No se pudo conectar a la base de datos MySQL.\n\n"
+                             "Por favor, verifique lo siguiente:\n"
+                             "1. XAMPP está ejecutándose y el servicio de MySQL está iniciado.\n"
+                             "2. Los datos en el archivo 'config.ini' son correctos.\n"
+                             "3. La base de datos 'tienda_electronica' ha sido creada.")
 
 if __name__ == "__main__":
-    if db_setup.setup_database_if_needed():
-        start_application()
-    else:
-        print("El programa se cerrará debido a un error en la configuración de la base de datos.")
+    start_application()
