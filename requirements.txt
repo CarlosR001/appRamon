@@ -1,4 +1,3 @@
-mysql-connector-python
 Pillow
 sv-ttk
 tkcalendar

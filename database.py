@@ -1,20 +1,19 @@
-import mysql.connector
-from mysql.connector import Error
-import configparser
+import sqlite3
+from sqlite3 import Error
+
+DB_FILE = "tienda_electronica.db"
 
 def get_db_connection():
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-    
+    """
+    Crea una conexión a la base de datos SQLite.
+    La conexión devolverá filas que se pueden acceder por nombre de columna.
+    """
+    conn = None
     try:
-        conn = mysql.connector.connect(
-            host=config['database']['host'],
-            user=config['database']['user'],
-            password=config['database']['password'],
-            database=config['database']['database']
-        )
-        if conn.is_connected():
-            return conn
+        conn = sqlite3.connect(DB_FILE)
+        # Este modo permite acceder a las columnas por nombre (como un diccionario)
+        conn.row_factory = sqlite3.Row
     except Error as e:
-        print(f"Error al conectar a MySQL: {e}")
+        print(f"Error al conectar a SQLite: {e}")
         return None
+    return conn

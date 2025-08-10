@@ -3,8 +3,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import sv_ttk
 
-# Importaciones de la aplicación
-from database import get_db_connection
+# Módulo de setup de la base de datos
+import db_setup 
 from auth import verify_and_get_user
 
 # Vistas
@@ -33,6 +33,7 @@ from modules.purchases.purchase_controller import PurchaseController
 from modules.users.user_controller import UserController
 from modules.dashboard.dashboard_controller import DashboardController
 from modules.sales_history.sales_history_controller import SalesHistoryController
+
 
 class LoginWindow(tk.Tk):
     def __init__(self, on_success_callback):
@@ -67,6 +68,7 @@ class LoginWindow(tk.Tk):
         else:
             messagebox.showerror("Error", "Usuario o contraseña incorrectos.")
 
+
 class App(tk.Tk):
     def __init__(self, user_data, on_logout_callback):
         super().__init__()
@@ -77,7 +79,7 @@ class App(tk.Tk):
         self.on_logout = on_logout_callback
         
         sv_ttk.set_theme("dark")
-        self.title("Electro-Pro: Sistema de Gestión"); self.geometry("1280x720"); self.minsize(1100, 650)
+        self.title("Centro electronico Ramon: Sistema de Gestión"); self.geometry("1280x720"); self.minsize(1100, 650)
         self.grid_rowconfigure(0, weight=1); self.grid_columnconfigure(1, weight=1)
         self.views = {}; self.controllers = {}
         self.create_views(); self.initialize_controllers()
@@ -157,4 +159,7 @@ def start_application():
     login_window.mainloop()
 
 if __name__ == "__main__":
-    start_application()
+    if db_setup.setup_database_if_needed():
+        start_application()
+    else:
+        print("El programa se cerrará debido a un error en la configuración de la base de datos.")
