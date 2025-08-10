@@ -24,13 +24,17 @@ class NavigationView(ttk.Frame):
         self.services_button = ttk.Button(self, text="🔧  Servicios", command=self.app_controller.show_services_view)
         self.services_button.grid(row=4, column=0, sticky="ew", pady=2)
 
-        # El botón de reportes solo está habilitado para el rol de Administrador (ID 1)
+        # --- Botones solo para Administradores ---
         is_admin = (self.app_controller.user_role == 1)
-        reports_state = tk.NORMAL if is_admin else tk.DISABLED
-        self.reports_button = ttk.Button(self, text="📊  Reportes", command=self.app_controller.show_reports_view, state=reports_state)
+        admin_state = tk.NORMAL if is_admin else tk.DISABLED
+
+        self.reports_button = ttk.Button(self, text="📊  Reportes", command=self.app_controller.show_reports_view, state=admin_state)
         self.reports_button.grid(row=5, column=0, sticky="ew", pady=2)
 
-        self.grid_rowconfigure(6, weight=1) 
+        self.expenses_button = ttk.Button(self, text="💸  Gastos", command=self.app_controller.show_expenses_view, state=admin_state)
+        self.expenses_button.grid(row=6, column=0, sticky="ew", pady=2)
+
+        self.grid_rowconfigure(7, weight=1) # Ajustar el espaciador
 
         self.settings_button = ttk.Button(self, text="⚙️  Configuración", state="disabled")
-        self.settings_button.grid(row=7, column=0, sticky="ew", pady=10)
+        self.settings_button.grid(row=8, column=0, sticky="ew", pady=10)

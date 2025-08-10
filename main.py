@@ -14,6 +14,7 @@ from views.sales_view import SalesView
 from modules.reports.reports_view import ReportsView
 from modules.clients.client_view import ClientsView
 from modules.services.service_view import ServicesView
+from modules.expenses.expense_view import ExpensesView
 
 # Controladores
 from product_controller import ProductController
@@ -21,6 +22,7 @@ from sales_controller import SalesController
 from modules.reports.reports_controller import ReportsController
 from modules.clients.client_controller import ClientController
 from modules.services.service_controller import ServiceController
+from modules.expenses.expense_controller import ExpenseController
 
 
 class LoginWindow(tk.Tk):
@@ -101,7 +103,6 @@ class App(tk.Tk):
         self.create_views()
         self.initialize_controllers()
         
-        # Iniciar en la vista de ventas por defecto
         self.show_sales_view()
 
     def create_views(self):
@@ -114,12 +115,12 @@ class App(tk.Tk):
         self.main_content_frame.grid_rowconfigure(0, weight=1)
         self.main_content_frame.grid_columnconfigure(0, weight=1)
         
-        # Crear vistas y guardarlas en el diccionario
         self.views['inventory'] = ProductsView(self.main_content_frame, self.user_role)
         self.views['sales'] = SalesView(self.main_content_frame)
         self.views['reports'] = ReportsView(self.main_content_frame)
         self.views['clients'] = ClientsView(self.main_content_frame)
         self.views['services'] = ServicesView(self.main_content_frame)
+        self.views['expenses'] = ExpensesView(self.main_content_frame)
 
     def initialize_controllers(self):
         """Crea todas las instancias de los controladores."""
@@ -139,6 +140,9 @@ class App(tk.Tk):
         service_controller = ServiceController(self)
         self.controllers['services'] = service_controller
 
+        expense_controller = ExpenseController(self)
+        self.controllers['expenses'] = expense_controller
+
     def show_view(self, view_name):
         """Oculta todas las vistas y muestra solo la seleccionada."""
         for view in self.views.values():
@@ -149,29 +153,29 @@ class App(tk.Tk):
             view_to_show.grid(row=0, column=0, sticky="nsew")
 
     def show_inventory_view(self):
-        """Muestra la vista de inventario y carga sus datos."""
         self.show_view('inventory')
         self.controllers['products'].load_products()
 
     def show_sales_view(self):
-        """Muestra la vista de ventas."""
         self.show_view('sales')
         self.controllers['sales'].search_products_for_sale("") 
 
     def show_reports_view(self):
-        """Muestra la vista de reportes y carga sus datos."""
         self.show_view('reports')
         self.controllers['reports'].load_data()
         
     def show_clients_view(self):
-        """Muestra la vista de clientes y carga los datos."""
         self.show_view('clients')
         self.controllers['clients'].load_all_clients()
 
     def show_services_view(self):
-        """Muestra la vista de servicios y carga los datos."""
         self.show_view('services')
         self.controllers['services'].load_all_services()
+
+    def show_expenses_view(self):
+        """Muestra la vista de gastos y carga los datos."""
+        self.show_view('expenses')
+        self.controllers['expenses'].load_all_expenses()
 
 
 if __name__ == "__main__":
