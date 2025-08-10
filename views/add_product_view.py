@@ -85,7 +85,8 @@ class AddProductView(tk.Toplevel):
             data['id_categoria'] = cat_id
             
             # PASO CORREGIDO: Llamar al controlador de productos correctamente
-            self.parent.controllers['products'].save_new_product(data)
+         self.parent.controllers['products'].save_new_product(data)
+
             self.destroy()
 
         except tk.TclError as e:

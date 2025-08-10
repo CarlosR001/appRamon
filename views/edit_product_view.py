@@ -86,7 +86,8 @@ class EditProductView(tk.Toplevel):
             updated_data['id_categoria'] = cat_id
             
             # Llama al método del controlador
-            self.parent.controller.update_existing_product(self.product_data['id'], updated_data)
+           self.parent.controllers['products'].update_existing_product(self.product_data['id'], updated_data)
+
             self.destroy()
 
         except ValueError:
