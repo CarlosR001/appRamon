@@ -8,7 +8,8 @@ class NavigationView(ttk.Frame):
 
         self.columnconfigure(0, weight=1)
 
-        app_title = ttk.Label(self, text="ELECTRO-PRO", font=("Segoe UI", 18, "bold"))
+        # --- NOMBRE DE LA TIENDA (AQUÍ PUEDES CAMBIARLO) ---
+        app_title = ttk.Label(self, text="Electronica Ramon Planta", font=("Segoe UI", 18, "bold"))
         app_title.grid(row=0, column=0, sticky="ew", pady=(0, 20))
 
         # --- Botones de Flujo Principal ---
@@ -42,6 +43,5 @@ class NavigationView(ttk.Frame):
 
         self.grid_rowconfigure(9, weight=1) 
 
-        # El botón de Configuración ahora es para gestionar usuarios
         self.settings_button = ttk.Button(self, text="⚙️  Gestión de Usuarios", command=self.app_controller.show_users_view, state=admin_state)
         self.settings_button.grid(row=10, column=0, sticky="ew", pady=10)
