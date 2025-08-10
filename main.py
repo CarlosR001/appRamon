@@ -19,6 +19,7 @@ from modules.suppliers.supplier_view import SupplierView
 from modules.purchases.purchase_view import PurchaseView
 from modules.users.user_view import UserView
 from modules.dashboard.dashboard_view import DashboardView
+from modules.sales_history.sales_history_view import SalesHistoryView
 
 # Controladores
 from product_controller import ProductController
@@ -31,6 +32,7 @@ from modules.suppliers.supplier_controller import SupplierController
 from modules.purchases.purchase_controller import PurchaseController
 from modules.users.user_controller import UserController
 from modules.dashboard.dashboard_controller import DashboardController
+from modules.sales_history.sales_history_controller import SalesHistoryController
 
 
 class LoginWindow(tk.Tk):
@@ -74,14 +76,12 @@ class LoginWindow(tk.Tk):
             messagebox.showerror("Error de Conexión", "No se pudo conectar a la base de datos.")
             return
         cursor = conn.cursor(dictionary=True)
-        # OBTENER ID Y ROL DEL USUARIO
         cursor.execute("SELECT id, password_hash, id_rol FROM usuarios WHERE nombre_usuario = %s", (username,))
         user_data = cursor.fetchone()
         cursor.close()
         conn.close()
         if user_data and verify_password(user_data['password_hash'], password):
             self.destroy()
-            # PASAR ID Y ROL A LA APP PRINCIPAL
             main_app = App(user_id=user_data['id'], user_role=user_data['id_rol'])
             main_app.mainloop()
         else:
@@ -91,10 +91,8 @@ class LoginWindow(tk.Tk):
 class App(tk.Tk):
     def __init__(self, user_id, user_role):
         super().__init__()
-        # GUARDAR ID Y ROL DEL USUARIO
         self.user_id = user_id
         self.user_role = user_role
-        
         sv_ttk.set_theme("dark")
         self.title("Electro-Pro: Sistema de Gestión")
         self.geometry("1280x720")
@@ -125,6 +123,7 @@ class App(tk.Tk):
         self.views['suppliers'] = SupplierView(self.main_content_frame)
         self.views['purchases'] = PurchaseView(self.main_content_frame)
         self.views['users'] = UserView(self.main_content_frame)
+        self.views['sales_history'] = SalesHistoryView(self.main_content_frame, self.user_role == 1)
 
     def initialize_controllers(self):
         self.controllers['dashboard'] = DashboardController(self)
@@ -148,6 +147,7 @@ class App(tk.Tk):
         self.controllers['purchases'] = purchase_controller
         user_controller = UserController(self)
         self.controllers['users'] = user_controller
+        self.controllers['sales_history'] = SalesHistoryController(self)
 
     def show_view(self, view_name):
         for view in self.views.values():
@@ -195,6 +195,11 @@ class App(tk.Tk):
     def show_users_view(self):
         self.show_view('users')
         self.controllers['users'].load_initial_data()
+
+    def show_sales_history_view(self):
+        """Muestra la vista del historial de ventas y carga los datos."""
+        self.show_view('sales_history')
+        self.controllers['sales_history'].load_sales_history()
 
 if __name__ == "__main__":
     login_window = LoginWindow()
