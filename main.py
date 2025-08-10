@@ -17,6 +17,7 @@ from modules.services.service_view import ServicesView
 from modules.expenses.expense_view import ExpensesView
 from modules.suppliers.supplier_view import SupplierView
 from modules.purchases.purchase_view import PurchaseView
+from modules.users.user_view import UserView
 
 # Controladores
 from product_controller import ProductController
@@ -27,6 +28,7 @@ from modules.services.service_controller import ServiceController
 from modules.expenses.expense_controller import ExpenseController
 from modules.suppliers.supplier_controller import SupplierController
 from modules.purchases.purchase_controller import PurchaseController
+from modules.users.user_controller import UserController
 
 
 class LoginWindow(tk.Tk):
@@ -115,6 +117,7 @@ class App(tk.Tk):
         self.views['expenses'] = ExpensesView(self.main_content_frame)
         self.views['suppliers'] = SupplierView(self.main_content_frame)
         self.views['purchases'] = PurchaseView(self.main_content_frame)
+        self.views['users'] = UserView(self.main_content_frame)
 
     def initialize_controllers(self):
         self.controllers['products'] = ProductController(self)
@@ -135,6 +138,8 @@ class App(tk.Tk):
         purchase_controller = PurchaseController(self)
         purchase_controller.set_view(self.views['purchases'])
         self.controllers['purchases'] = purchase_controller
+        user_controller = UserController(self)
+        self.controllers['users'] = user_controller
 
     def show_view(self, view_name):
         for view in self.views.values():
@@ -172,9 +177,13 @@ class App(tk.Tk):
         self.controllers['suppliers'].load_all_suppliers()
     
     def show_purchases_view(self):
-        """Muestra la vista de compras y resetea su estado."""
         self.show_view('purchases')
         self.controllers['purchases'].clear_purchase(confirm=False)
+
+    def show_users_view(self):
+        """Muestra la vista de gestión de usuarios y carga sus datos."""
+        self.show_view('users')
+        self.controllers['users'].load_initial_data()
 
 if __name__ == "__main__":
     login_window = LoginWindow()

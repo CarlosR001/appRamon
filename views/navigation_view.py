@@ -40,7 +40,8 @@ class NavigationView(ttk.Frame):
         self.reports_button = ttk.Button(self, text="📊  Reportes", command=self.app_controller.show_reports_view, state=admin_state)
         self.reports_button.grid(row=8, column=0, sticky="ew", pady=2)
 
-        self.grid_rowconfigure(9, weight=1) # Ajustar el espaciador
+        self.grid_rowconfigure(9, weight=1) 
 
-        self.settings_button = ttk.Button(self, text="⚙️  Configuración", state="disabled")
+        # El botón de Configuración ahora es para gestionar usuarios
+        self.settings_button = ttk.Button(self, text="⚙️  Gestión de Usuarios", command=self.app_controller.show_users_view, state=admin_state)
         self.settings_button.grid(row=10, column=0, sticky="ew", pady=10)
