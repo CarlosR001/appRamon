@@ -29,10 +29,13 @@ class ReportsView(ttk.Frame):
         self.notebook.add(self.product_sales_frame, text="Ventas por Producto")
         self.profit_summary_frame = ttk.Frame(self.notebook, padding=10)
         self.notebook.add(self.profit_summary_frame, text="Resumen de Ganancias")
+        self.cash_balance_frame = ttk.Frame(self.notebook, padding=10)
+        self.notebook.add(self.cash_balance_frame, text="Cuadre de Caja")
 
         self.create_daily_summary_widgets()
         self.create_product_sales_widgets()
         self.create_profit_summary_widgets()
+        self.create_cash_balance_widgets()
 
     def set_controller(self, controller):
         self.controller = controller
@@ -41,12 +44,11 @@ class ReportsView(ttk.Frame):
         if calendar_available:
             self.filter_button.config(command=self.controller.load_daily_summary_data)
             self.profit_filter_button.config(command=self.controller.load_profit_summary_data)
+            self.cash_balance_button.config(command=self.controller.load_cash_balance_data)
 
     def create_daily_summary_widgets(self):
-        """Crea los widgets para la pestaña de Resumen Diario (CORREGIDO)."""
         self.daily_summary_frame.columnconfigure(0, weight=1)
         self.daily_summary_frame.rowconfigure(1, weight=1)
-        
         filter_frame = ttk.Frame(self.daily_summary_frame, padding=(0, 5))
         filter_frame.grid(row=0, column=0, sticky="ew")
         if calendar_available:
@@ -58,20 +60,15 @@ class ReportsView(ttk.Frame):
             self.end_date_entry.pack(side="left")
             self.filter_button = ttk.Button(filter_frame, text="Filtrar")
             self.filter_button.pack(side="left", padx=10)
-        
         tree_frame = ttk.Frame(self.daily_summary_frame)
         tree_frame.grid(row=1, column=0, sticky="nsew", pady=(10,0))
         tree_frame.columnconfigure(0, weight=1); tree_frame.rowconfigure(0, weight=1)
-        
         self.daily_summary_tree = ttk.Treeview(tree_frame, columns=("fecha", "num_ventas", "total"), show="headings")
         self.daily_summary_tree.heading("fecha", text="Fecha"); self.daily_summary_tree.heading("num_ventas", text="Nº de Ventas"); self.daily_summary_tree.heading("total", text="Total Vendido")
         self.daily_summary_tree.column("fecha", anchor=tk.W, width=150); self.daily_summary_tree.column("num_ventas", anchor=tk.CENTER, width=120); self.daily_summary_tree.column("total", anchor=tk.E, width=150)
-        
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.daily_summary_tree.yview)
         self.daily_summary_tree.configure(yscroll=scrollbar.set)
-        
         self.daily_summary_tree.grid(row=0, column=0, sticky="nsew"); scrollbar.grid(row=0, column=1, sticky="ns")
-
         footer_frame = ttk.Frame(self.daily_summary_frame, style="Card.TFrame", padding=10)
         footer_frame.grid(row=2, column=0, sticky="ew", pady=(10, 0))
         self.total_revenue_var = tk.StringVar(value="Ingresos en Periodo: S/ 0.00")
@@ -111,6 +108,27 @@ class ReportsView(ttk.Frame):
             ttk.Label(container, textvariable=var, font=("Segoe UI", font_size, font_weight)).grid(row=i, column=1, sticky="e", padx=10, pady=8)
         ttk.Separator(container, orient="horizontal").grid(row=3, column=0, columnspan=2, sticky="ew", pady=10)
 
+    def create_cash_balance_widgets(self):
+        self.cash_balance_frame.columnconfigure(0, weight=1)
+        filter_frame = ttk.Frame(self.cash_balance_frame, padding=(0, 5))
+        filter_frame.pack(fill="x", pady=(0,15))
+        if calendar_available:
+            ttk.Label(filter_frame, text="Seleccionar Fecha:").pack(side="left", padx=(0, 5))
+            self.cash_balance_date = DateEntry(filter_frame, date_pattern='dd/mm/yyyy', width=12)
+            self.cash_balance_date.pack(side="left")
+            self.cash_balance_button = ttk.Button(filter_frame, text="Generar Cuadre")
+            self.cash_balance_button.pack(side="left", padx=10)
+        container = ttk.Frame(self.cash_balance_frame, style="Card.TFrame", padding=20)
+        container.pack(expand=True)
+        self.cash_balance_vars = {"sales": tk.StringVar(value="S/ 0.00"),"expenses": tk.StringVar(value="S/ 0.00"),"balance": tk.StringVar(value="S/ 0.00")}
+        labels = [("(+) Total Ingresos por Ventas:", self.cash_balance_vars["sales"]),("(-) Total Egresos por Gastos:", self.cash_balance_vars["expenses"]),("(=) BALANCE DE CAJA:", self.cash_balance_vars["balance"])]
+        for i, (text, var) in enumerate(labels):
+            font_size = 16 if "BALANCE" in text else 12
+            font_weight = "bold" if "BALANCE" in text else "normal"
+            ttk.Label(container, text=text, font=("Segoe UI", font_size, font_weight)).grid(row=i, column=0, sticky="w", padx=10, pady=8)
+            ttk.Label(container, textvariable=var, font=("Segoe UI", font_size, font_weight)).grid(row=i, column=1, sticky="e", padx=10, pady=8)
+        ttk.Separator(container, orient="horizontal").grid(row=1, column=0, columnspan=2, sticky="ew", pady=10)
+
     def update_profit_summary(self, summary_data):
         revenue, cogs, expenses = summary_data.get('total_revenue', 0.0), summary_data.get('total_cogs', 0.0), summary_data.get('total_expenses', 0.0)
         gross_profit, net_profit = revenue - cogs, (revenue - cogs) - expenses
@@ -118,6 +136,14 @@ class ReportsView(ttk.Frame):
         for child in self.profit_summary_frame.winfo_children()[1].winfo_children():
             if isinstance(child, ttk.Label) and str(self.profit_vars["net_profit"]) in str(child.cget("textvariable")):
                 child.config(foreground="#77dd77" if net_profit >= 0 else "#ff6961"); break
+    
+    def update_cash_balance(self, balance_data):
+        sales, expenses = balance_data.get('total_sales', 0.0), balance_data.get('total_expenses', 0.0)
+        balance = sales - expenses
+        self.cash_balance_vars["sales"].set(f"S/ {sales:.2f}"); self.cash_balance_vars["expenses"].set(f"S/ {expenses:.2f}"); self.cash_balance_vars["balance"].set(f"S/ {balance:.2f}")
+        for child in self.cash_balance_frame.winfo_children()[1].winfo_children():
+            if isinstance(child, ttk.Label) and str(self.cash_balance_vars["balance"]) in str(child.cget("textvariable")):
+                child.config(foreground="#77dd77" if balance >= 0 else "#ff6961"); break
 
     def add_daily_summary_to_tree(self, summary_item):
         fecha = summary_item['venta_fecha']; total = f"S/ {summary_item.get('total_vendido', 0.0):.2f}"

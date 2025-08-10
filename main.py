@@ -34,7 +34,6 @@ from modules.dashboard.dashboard_controller import DashboardController
 
 
 class LoginWindow(tk.Tk):
-    # --- El código de LoginWindow no cambia, está correcto ---
     def __init__(self):
         super().__init__()
         sv_ttk.set_theme("dark")
@@ -75,22 +74,27 @@ class LoginWindow(tk.Tk):
             messagebox.showerror("Error de Conexión", "No se pudo conectar a la base de datos.")
             return
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT password_hash, id_rol FROM usuarios WHERE nombre_usuario = %s", (username,))
+        # OBTENER ID Y ROL DEL USUARIO
+        cursor.execute("SELECT id, password_hash, id_rol FROM usuarios WHERE nombre_usuario = %s", (username,))
         user_data = cursor.fetchone()
         cursor.close()
         conn.close()
         if user_data and verify_password(user_data['password_hash'], password):
             self.destroy()
-            main_app = App(user_data['id_rol'])
+            # PASAR ID Y ROL A LA APP PRINCIPAL
+            main_app = App(user_id=user_data['id'], user_role=user_data['id_rol'])
             main_app.mainloop()
         else:
             messagebox.showerror("Error", "Usuario o contraseña incorrectos.")
 
 
 class App(tk.Tk):
-    def __init__(self, user_role):
+    def __init__(self, user_id, user_role):
         super().__init__()
+        # GUARDAR ID Y ROL DEL USUARIO
+        self.user_id = user_id
         self.user_role = user_role
+        
         sv_ttk.set_theme("dark")
         self.title("Electro-Pro: Sistema de Gestión")
         self.geometry("1280x720")
@@ -101,7 +105,7 @@ class App(tk.Tk):
         self.controllers = {}
         self.create_views()
         self.initialize_controllers()
-        self.show_dashboard_view() # Iniciar en el Dashboard
+        self.show_dashboard_view()
 
     def create_views(self):
         self.navigation_view = NavigationView(self, self)
@@ -153,7 +157,6 @@ class App(tk.Tk):
             view_to_show.grid(row=0, column=0, sticky="nsew")
 
     def show_dashboard_view(self):
-        """Muestra el dashboard y refresca sus datos."""
         self.show_view('dashboard')
         self.controllers['dashboard'].load_data()
 

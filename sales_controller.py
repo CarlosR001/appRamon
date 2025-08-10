@@ -4,11 +4,13 @@ import product_model as p_model
 import sales_model as s_model
 from modules.clients import client_model
 from views.receipt_view import ReceiptView
-from modules.printing import pdf_generator # <-- 1. Importar el nuevo módulo
+from modules.printing import pdf_generator
 
 class SalesController:
     def __init__(self, app_view):
         self.app_view = app_view
+        # OBTENER EL ID DEL USUARIO LOGUEADO
+        self.user_id = app_view.user_id
         self.sales_view = None
         self.cart = {}
         self.selected_client_id = None
@@ -17,25 +19,21 @@ class SalesController:
         self.sales_view = sales_view
         self.sales_view.set_controller(self)
 
-    # ... (El resto de los métodos hasta process_sale no cambian) ...
+    # --- El resto de los métodos hasta process_sale no se tocan ---
     def search_products_for_sale(self, search_term):
         if not self.sales_view: return
-        tree = self.sales_view.search_results_tree
-        tree.delete(*tree.get_children())
+        tree = self.sales_view.search_results_tree; tree.delete(*tree.get_children())
         if search_term:
             results = p_model.search_products(search_term)
             for product in results:
-                tree.insert("", tk.END, values=(
-                    product.get('nombre', ''), f"S/ {product.get('precio_venta', 0.0):.2f}",
-                    product.get('stock', 0), product.get('id')
-                ))
+                tree.insert("", tk.END, values=(product.get('nombre', ''), f"S/ {product.get('precio_venta', 0.0):.2f}", product.get('stock', 0), product.get('id')))
 
     def add_product_to_cart(self, product_id):
         if product_id in self.cart:
             if self.cart[product_id]['qty'] < self.cart[product_id]['data']['stock']:
                 self.cart[product_id]['qty'] += 1
             else:
-                messagebox.showwarning("Stock Insuficiente", "No hay más stock para este producto.", parent=self.sales_view)
+                messagebox.showwarning("Stock Insuficiente", "No hay más stock.", parent=self.sales_view)
         else:
             product_data = p_model.get_by_id(product_id)
             if product_data:
@@ -46,23 +44,19 @@ class SalesController:
 
     def update_cart_display(self):
         if not self.sales_view: return
-        tree = self.sales_view.cart_tree
-        tree.delete(*tree.get_children())
+        tree = self.sales_view.cart_tree; tree.delete(*tree.get_children())
         total_sale = 0
         for product_id, item in self.cart.items():
             qty, name, price = item['qty'], item['data'].get('nombre', ''), item['data'].get('precio_venta', 0.0)
-            subtotal = qty * price
-            total_sale += subtotal
+            subtotal = qty * price; total_sale += subtotal
             tree.insert("", tk.END, values=(product_id, qty, name, f"S/ {price:.2f}", f"S/ {subtotal:.2f}"))
         self.sales_view.total_var.set(f"S/ {total_sale:.2f}")
-
+    
     def increase_cart_item_qty(self):
         selected_id = self.sales_view.get_selected_cart_item_id()
-        if selected_id in self.cart:
-            if self.cart[selected_id]['qty'] < self.cart[selected_id]['data']['stock']:
-                self.cart[selected_id]['qty'] += 1
-                self.update_cart_display()
-            else: messagebox.showwarning("Stock Insuficiente", "No hay más stock.", parent=self.sales_view)
+        if selected_id in self.cart and self.cart[selected_id]['qty'] < self.cart[selected_id]['data']['stock']:
+            self.cart[selected_id]['qty'] += 1; self.update_cart_display()
+        elif selected_id: messagebox.showwarning("Stock Insuficiente", "No hay más stock.", parent=self.sales_view)
 
     def decrease_cart_item_qty(self):
         selected_id = self.sales_view.get_selected_cart_item_id()
@@ -74,12 +68,10 @@ class SalesController:
     def remove_cart_item(self):
         selected_id = self.sales_view.get_selected_cart_item_id()
         if selected_id in self.cart:
-            del self.cart[selected_id]
-            self.update_cart_display()
-
+            del self.cart[selected_id]; self.update_cart_display()
+    
     def show_client_search_popup(self):
-        popup = tk.Toplevel(self.app_view)
-        popup.title("Seleccionar Cliente"); popup.geometry("450x300"); popup.transient(self.app_view); popup.grab_set()
+        popup = tk.Toplevel(self.app_view); popup.title("Seleccionar Cliente"); popup.geometry("450x300"); popup.transient(self.app_view); popup.grab_set()
         search_frame = ttk.Frame(popup, padding=10); search_frame.pack(fill="x"); search_frame.columnconfigure(0, weight=1)
         ttk.Label(search_frame, text="Buscar cliente:").pack(anchor="w"); search_var = tk.StringVar()
         search_entry = ttk.Entry(search_frame, textvariable=search_var); search_entry.pack(fill="x", pady=5)
@@ -101,42 +93,36 @@ class SalesController:
         update_search()
 
     def process_sale(self):
-        if not self.cart:
-            messagebox.showinfo("Carrito Vacío", "Añada productos para realizar una venta.", parent=self.sales_view)
-            return
+        if not self.cart: messagebox.showinfo("Carrito Vacío", "Añada productos para realizar una venta.", parent=self.sales_view); return
         total = sum(item['qty'] * item['data']['precio_venta'] for item in self.cart.values())
         client_info = f"para {self.sales_view.selected_client_var.get()}" if self.selected_client_id else "como venta general"
         answer = messagebox.askyesno("Confirmar Venta", f"El total de la venta es S/ {total:.2f} {client_info}. ¿Desea continuar?", parent=self.sales_view)
         if answer:
-            sale_id = s_model.record_sale(self.cart, total, self.selected_client_id)
+            # PASAR EL USER_ID AL MODELO
+            sale_id = s_model.record_sale(self.cart, total, self.selected_client_id, self.user_id)
             if sale_id:
                 self.clear_sale(confirm=False)
                 self.show_receipt(sale_id)
             else:
-                messagebox.showerror("Error de Transacción", "Ocurrió un error al registrar la venta. Verifique el stock de los productos.")
+                messagebox.showerror("Error de Transacción", "Ocurrió un error al registrar la venta. Verifique el stock.")
 
     def show_receipt(self, sale_id):
         receipt_data = s_model.get_sale_details_for_receipt(sale_id)
         if receipt_data:
-            # <-- 2. Pasar el controlador a la vista del recibo
             receipt_window = ReceiptView(self.app_view, self, receipt_data)
             receipt_window.wait_window()
         else:
             messagebox.showerror("Error de Recibo", f"No se pudieron obtener los detalles para la venta #{sale_id}.")
 
-    # --- 3. Nuevo método para ser llamado desde la vista del recibo ---
     def print_receipt(self, receipt_data, print_format):
-        """Llama al generador de PDF."""
         try:
             pdf_generator.generate_receipt(receipt_data, print_format)
-            messagebox.showinfo("PDF Generado", "El recibo en PDF se ha generado y abierto.", parent=self.app_view)
         except Exception as e:
             messagebox.showerror("Error de Impresión", f"No se pudo generar el PDF: {e}", parent=self.app_view)
 
     def clear_sale(self, confirm=True):
         if confirm and self.cart:
             if not messagebox.askyesno("Confirmar Cancelación", "¿Desea cancelar la venta actual?", parent=self.sales_view): return
-        self.cart.clear()
-        self.selected_client_id = None
+        self.cart.clear(); self.selected_client_id = None
         self.sales_view.selected_client_var.set("Cliente: Público General")
         self.update_cart_display()

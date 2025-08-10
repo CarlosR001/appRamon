@@ -1,6 +1,6 @@
 from . import reports_model as model
 from .daily_detail_view import DailyDetailView
-from datetime import datetime
+from datetime import datetime, date
 
 class ReportsController:
     def __init__(self, app_view):
@@ -13,11 +13,9 @@ class ReportsController:
         self.reports_view.set_controller(self)
 
     def load_data(self):
-        """Carga los datos para la pestaña inicial (Resumen Diario) sin filtro."""
         self.load_daily_summary_data(use_filter=False)
 
     def on_tab_changed(self, event):
-        """Se activa cuando el usuario cambia de pestaña para una carga inicial."""
         selected_tab_index = self.reports_view.notebook.index(self.reports_view.notebook.select())
         if selected_tab_index == 0:
             self.load_daily_summary_data(use_filter=False)
@@ -25,16 +23,15 @@ class ReportsController:
             self.load_product_sales_data()
         elif selected_tab_index == 2:
             self.load_profit_summary_data(use_filter=False)
+        elif selected_tab_index == 3:
+            self.load_cash_balance_data()
 
     def load_daily_summary_data(self, use_filter=True):
         if not self.reports_view: return
         start_date, end_date = None, None
         if use_filter:
-            try:
-                start_date = self.reports_view.start_date_entry.get_date()
-                end_date = self.reports_view.end_date_entry.get_date()
-            except AttributeError: # tkcalendar no instalado
-                pass
+            start_date = self.reports_view.start_date_entry.get_date()
+            end_date = self.reports_view.end_date_entry.get_date()
         
         self.reports_view.clear_daily_summary_tree()
         daily_summary = model.get_daily_sales_summary(start_date, end_date)
@@ -54,14 +51,23 @@ class ReportsController:
         if not self.reports_view: return
         start_date, end_date = None, None
         if use_filter:
-            try:
-                start_date = self.reports_view.profit_start_date.get_date()
-                end_date = self.reports_view.profit_end_date.get_date()
-            except AttributeError: # tkcalendar no instalado
-                pass
+            start_date = self.reports_view.profit_start_date.get_date()
+            end_date = self.reports_view.profit_end_date.get_date()
         
         summary_data = model.get_profit_summary(start_date, end_date)
         self.reports_view.update_profit_summary(summary_data)
+
+    def load_cash_balance_data(self):
+        """Carga los datos para la pestaña de Cuadre de Caja."""
+        if not self.reports_view: return
+        try:
+            balance_date = self.reports_view.cash_balance_date.get_date()
+            balance_data = model.get_cash_balance_for_date(balance_date)
+            if balance_data:
+                self.reports_view.update_cash_balance(balance_data)
+        except Exception as e:
+            print(f"Error al cargar cuadre de caja: {e}")
+
 
     def show_daily_details(self, event=None):
         if not self.reports_view: return
