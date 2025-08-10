@@ -9,13 +9,12 @@ class SalesController:
         self.app_view = app_view
         self.sales_view = None
         self.cart = {}
-        self.selected_client_id = None # Para guardar el ID del cliente de la venta
+        self.selected_client_id = None
 
     def set_view(self, sales_view):
         self.sales_view = sales_view
         self.sales_view.set_controller(self)
 
-    # --- Métodos de búsqueda de productos (sin cambios) ---
     def search_products_for_sale(self, search_term):
         if not self.sales_view: return
         tree = self.sales_view.search_results_tree
@@ -24,33 +23,90 @@ class SalesController:
             results = p_model.search_products(search_term)
             for product in results:
                 tree.insert("", tk.END, values=(
-                    product['nombre'], f"S/ {product['precio_venta']:.2f}", product['stock'], product['id']
+                    product.get('nombre', ''),
+                    f"S/ {product.get('precio_venta', 0.0):.2f}",
+                    product.get('stock', 0),
+                    product.get('id')
                 ))
 
-    # --- Métodos del carrito (sin cambios) ---
     def add_product_to_cart(self, product_id):
-        # ... (lógica existente)
+        """Añade un producto al carrito o incrementa su cantidad."""
+        if product_id in self.cart:
+            # Si el producto ya está, solo incrementamos la cantidad
+            if self.cart[product_id]['qty'] < self.cart[product_id]['data']['stock']:
+                self.cart[product_id]['qty'] += 1
+            else:
+                messagebox.showwarning("Stock Insuficiente", "No hay más stock disponible para este producto.", parent=self.sales_view)
+        else:
+            # CORRECCIÓN: Usar el modelo de productos para obtener datos frescos
+            product_data = p_model.search_products(str(product_id))
+            if product_data:
+                product_data = product_data[0] # search_products devuelve una lista
+                if product_data['stock'] > 0:
+                    self.cart[product_id] = {'data': product_data, 'qty': 1}
+                else:
+                    messagebox.showwarning("Sin Stock", "Este producto no tiene stock disponible.", parent=self.sales_view)
+            else:
+                messagebox.showerror("Error", f"No se pudo encontrar el producto con ID {product_id}.", parent=self.sales_view)
+        
         self.update_cart_display()
 
     def update_cart_display(self):
-        # ... (lógica existente)
-        pass
+        """Refresca la tabla del carrito y el total de la venta."""
+        if not self.sales_view: return
+        tree = self.sales_view.cart_tree
+        tree.delete(*tree.get_children())
+        
+        total_sale = 0
+        for product_id, item in self.cart.items():
+            qty = item['qty']
+            name = item['data'].get('nombre', '')
+            price = item['data'].get('precio_venta', 0.0)
+            subtotal = qty * price
+            total_sale += subtotal
+            
+            tree.insert("", tk.END, values=(
+                product_id, qty, name, f"S/ {price:.2f}", f"S/ {subtotal:.2f}"
+            ))
+        
+        self.sales_view.total_var.set(f"S/ {total_sale:.2f}")
 
     def increase_cart_item_qty(self):
-        # ... (lógica existente)
-        pass
+        selected_id = self.sales_view.get_selected_cart_item_id()
+        if not selected_id:
+            messagebox.showinfo("Información", "Seleccione un producto del carrito para modificarlo.", parent=self.sales_view)
+            return
+        
+        if selected_id in self.cart:
+            if self.cart[selected_id]['qty'] < self.cart[selected_id]['data']['stock']:
+                self.cart[selected_id]['qty'] += 1
+                self.update_cart_display()
+            else:
+                messagebox.showwarning("Stock Insuficiente", "No hay más stock disponible.", parent=self.sales_view)
 
     def decrease_cart_item_qty(self):
-        # ... (lógica existente)
-        pass
+        selected_id = self.sales_view.get_selected_cart_item_id()
+        if not selected_id:
+            messagebox.showinfo("Información", "Seleccione un producto del carrito para modificarlo.", parent=self.sales_view)
+            return
+            
+        if selected_id in self.cart:
+            self.cart[selected_id]['qty'] -= 1
+            if self.cart[selected_id]['qty'] == 0:
+                del self.cart[selected_id]
+            self.update_cart_display()
 
     def remove_cart_item(self):
-        # ... (lógica existente)
-        pass
-        
-    # --- Lógica de Selección de Cliente (NUEVO) ---
+        selected_id = self.sales_view.get_selected_cart_item_id()
+        if not selected_id:
+            messagebox.showinfo("Información", "Seleccione un producto del carrito para eliminarlo.", parent=self.sales_view)
+            return
+
+        if selected_id in self.cart:
+            del self.cart[selected_id]
+            self.update_cart_display()
+
     def show_client_search_popup(self):
-        """Crea y muestra una ventana emergente para buscar y seleccionar un cliente."""
         popup = tk.Toplevel(self.app_view)
         popup.title("Seleccionar Cliente")
         popup.geometry("450x300")
@@ -98,9 +154,8 @@ class SalesController:
         ttk.Button(button_frame, text="Seleccionar", command=select_client, style="Accent.TButton").pack(side="right")
         ttk.Button(button_frame, text="Cancelar", command=popup.destroy).pack(side="right", padx=5)
 
-        update_search() # Cargar todos los clientes al inicio
+        update_search()
 
-    # --- Lógica de Venta (MODIFICADA) ---
     def process_sale(self):
         if not self.cart:
             messagebox.showinfo("Carrito Vacío", "Añada productos para realizar una venta.", parent=self.sales_view)
@@ -112,7 +167,6 @@ class SalesController:
         
         answer = messagebox.askyesno("Confirmar Venta", f"El total de la venta es S/ {total:.2f} {client_info}. ¿Desea continuar?", parent=self.sales_view)
         if answer:
-            # Ahora pasamos el ID del cliente (puede ser None) al modelo
             success = s_model.record_sale(self.cart, total, self.selected_client_id)
             if success:
                 messagebox.showinfo("Éxito", "Venta registrada correctamente.")
@@ -127,6 +181,6 @@ class SalesController:
             if not answer: return
         
         self.cart.clear()
-        self.selected_client_id = None # Limpiar cliente
+        self.selected_client_id = None
         self.sales_view.selected_client_var.set("Cliente: Público General")
         self.update_cart_display()

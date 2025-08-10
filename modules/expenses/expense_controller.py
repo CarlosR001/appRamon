@@ -23,11 +23,13 @@ class ExpenseController:
         data = self.expenses_view.get_expense_data()
         if data:
             if model.add(data['description'], data['amount'], data['expense_date']):
-                self.expenses_view.show_info("Gasto añadido correctamente.")
+                # CORRECCIÓN: Usar messagebox directamente
+                messagebox.showinfo("Éxito", "Gasto añadido correctamente.", parent=self.main_app)
                 self.expenses_view.clear_form()
                 self.load_all_expenses() # Refrescar la lista
             else:
-                self.expenses_view.show_error("No se pudo añadir el gasto.")
+                # CORRECCIÓN: Usar messagebox directamente
+                messagebox.showerror("Error", "No se pudo añadir el gasto.", parent=self.main_app)
 
     def delete_expense(self):
         """Elimina el gasto seleccionado."""

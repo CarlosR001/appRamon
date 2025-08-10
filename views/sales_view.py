@@ -6,8 +6,8 @@ class SalesView(ttk.Frame):
         super().__init__(parent)
 
         # --- Layout Principal (2 columnas) ---
-        self.columnconfigure(0, weight=1) # Columna de búsqueda
-        self.columnconfigure(1, weight=2) # Columna del carrito (más ancha)
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=2)
         self.rowconfigure(0, weight=1)
 
         # --- Columna Izquierda: Búsqueda y Resultados ---
@@ -23,6 +23,7 @@ class SalesView(ttk.Frame):
         search_entry.grid(row=0, column=0, sticky="ew", pady=(0,10), ipady=4)
         search_entry.bind("<KeyRelease>", self.on_key_release)
 
+        # -- Tabla de Búsqueda de Productos (CORREGIDA) --
         self.search_results_tree = ttk.Treeview(left_frame, columns=("nombre", "precio", "stock", "id"), show="headings", displaycolumns=("nombre", "precio", "stock"))
         self.search_results_tree.heading("nombre", text="Producto")
         self.search_results_tree.heading("precio", text="Precio")
@@ -30,6 +31,7 @@ class SalesView(ttk.Frame):
         self.search_results_tree.column("precio", width=80, anchor=tk.E)
         self.search_results_tree.column("stock", width=60, anchor=tk.CENTER)
         self.search_results_tree.grid(row=1, column=0, sticky="nsew")
+        # Esta es la línea que había roto. La restauro.
         self.search_results_tree.bind("<Double-1>", self.add_to_cart_event)
 
         # --- Columna Derecha: Carrito de Venta ---
@@ -38,18 +40,16 @@ class SalesView(ttk.Frame):
         right_frame.columnconfigure(0, weight=1)
         right_frame.rowconfigure(2, weight=1) # La tabla del carrito se expande
 
-        # --- Sección del Cliente ---
+        # Sección del Cliente
         client_section_frame = ttk.Frame(right_frame, style="Card.TFrame")
         client_section_frame.grid(row=0, column=0, sticky="ew", pady=(0, 15))
         client_section_frame.columnconfigure(0, weight=1)
-        
         self.select_client_button = ttk.Button(client_section_frame, text="Seleccionar Cliente")
         self.select_client_button.grid(row=0, column=1, sticky="e")
-        
         self.selected_client_var = tk.StringVar(value="Cliente: Público General")
         ttk.Label(client_section_frame, textvariable=self.selected_client_var, font=("Segoe UI", 10, "italic")).grid(row=0, column=0, sticky="w")
         
-        # --- Carrito ---
+        # Carrito
         ttk.Label(right_frame, text="Venta Actual", font=("Segoe UI", 16, "bold")).grid(row=1, column=0, sticky="w", pady=(0, 10))
         
         self.cart_tree = ttk.Treeview(right_frame, columns=("id", "qty", "nombre", "precio_unit", "subtotal"), show="headings", displaycolumns=("qty", "nombre", "precio_unit", "subtotal"))
@@ -91,7 +91,6 @@ class SalesView(ttk.Frame):
         self.cancel_sale_button.grid(row=0, column=0, sticky="ew", ipady=10, padx=(0,5))
 
     def set_controller(self, controller):
-        """Asigna los controladores a los eventos de los widgets."""
         self.controller = controller
         self.select_client_button.config(command=self.controller.show_client_search_popup)
         self.complete_sale_button.config(command=self.controller.process_sale)
@@ -107,7 +106,9 @@ class SalesView(ttk.Frame):
     def add_to_cart_event(self, event):
         selected_item = self.search_results_tree.focus()
         if selected_item:
-            product_id = self.search_results_tree.item(selected_item, "values")[3]
+            # Aseguramos que el ID esté en la columna correcta
+            item_values = self.search_results_tree.item(selected_item, "values")
+            product_id = item_values[3]
             self.controller.add_product_to_cart(int(product_id))
 
     def get_selected_cart_item_id(self):
