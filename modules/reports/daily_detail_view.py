@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from datetime import datetime
+from datetime import datetime, date
 
 class DailyDetailView(tk.Toplevel):
     def __init__(self, parent, sales_data, sale_date):
@@ -8,15 +8,17 @@ class DailyDetailView(tk.Toplevel):
         self.sales_data = sales_data
         
         # --- Window Setup ---
-        formatted_date = sale_date.strftime('%d/%m/%Y') if isinstance(sale_date, datetime.date) else sale_date
+        # CORRECCIÓN: Asegurar que la fecha siempre se formatee correctamente
+        formatted_date = sale_date.strftime('%d/%m/%Y') if isinstance(sale_date, (datetime, date)) else str(sale_date)
         self.title(f"Detalle de Ventas - {formatted_date}")
         self.geometry("700x400")
+        self.minsize(600, 350) # CORRECCIÓN: Establecer un tamaño mínimo
         self.grab_set()
 
         # --- Layout Principal (2 columnas) ---
         main_frame = ttk.Frame(self, padding=10)
         main_frame.pack(expand=True, fill="both")
-        main_frame.columnconfigure(1, weight=1) # El panel derecho se expande
+        main_frame.columnconfigure(1, weight=1)
         main_frame.rowconfigure(0, weight=1)
 
         # --- Panel Izquierdo: Lista de Ventas ---
@@ -45,7 +47,7 @@ class DailyDetailView(tk.Toplevel):
         self.detail_title_var = tk.StringVar(value="Detalle de Venta")
         ttk.Label(right_frame, textvariable=self.detail_title_var, font=("Segoe UI", 12, "bold")).grid(row=0, column=0, sticky="w")
         
-        self.client_var = tk.StringVar()
+        self.client_var = tk.StringVar(value="Seleccione una venta para ver los detalles.")
         ttk.Label(right_frame, textvariable=self.client_var).grid(row=1, column=0, sticky="w", pady=(0,10))
 
         self.items_tree = ttk.Treeview(right_frame, columns=("qty", "prod", "price", "subtotal"), show="headings")
@@ -76,14 +78,12 @@ class DailyDetailView(tk.Toplevel):
 
         sale_id = int(selection[0])
         
-        # Encontrar los datos de esta venta en la lista
         selected_sale_data = next((s for s in self.sales_data if s['id'] == sale_id), None)
         
         if selected_sale_data:
             self.detail_title_var.set(f"Detalle de Venta #{sale_id}")
             self.client_var.set(f"Cliente: {selected_sale_data.get('cliente_nombre', 'Público General')}")
 
-            # Limpiar y rellenar la tabla de items
             self.items_tree.delete(*self.items_tree.get_children())
             for item in selected_sale_data.get('items', []):
                 price = item['precio_unitario']
