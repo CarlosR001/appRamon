@@ -2,22 +2,21 @@ import tkinter as tk
 from tkinter import ttk
 
 class NavigationView(ttk.Frame):
-    def __init__(self, parent, app_controller, permissions):
+    def __init__(self, parent, app_controller, permissions, logout_command):
         super().__init__(parent, style="Card.TFrame", padding=10)
         self.app_controller = app_controller
         self.permissions = permissions
+        self.logout_command = logout_command # Guardar el comando de logout
         self.buttons = {}
         self.columnconfigure(0, weight=1)
 
         app_title = ttk.Label(self, text="Nombre de tu Tienda", font=("Segoe UI", 18, "bold"))
         app_title.grid(row=0, column=0, sticky="ew", pady=(0, 20))
 
-        # --- Creación Dinámica de Botones ---
         self.create_buttons()
 
     def create_buttons(self):
         """Crea los botones de navegación basados en los permisos del usuario."""
-        # Definir todos los botones posibles: (nombre_permiso, texto_boton, comando)
         all_buttons = [
             ('access_dashboard', "🏠  Dashboard", self.app_controller.show_dashboard_view),
             ('access_sales', "🛒  Ventas (TPV)", self.app_controller.show_sales_view),
@@ -39,7 +38,6 @@ class NavigationView(ttk.Frame):
                 self.buttons[permission] = button
                 row_index += 1
         
-        # Estilo especial para el botón principal
         if 'access_dashboard' in self.buttons:
             self.buttons['access_dashboard'].config(style="Accent.TButton")
 
@@ -47,7 +45,12 @@ class NavigationView(ttk.Frame):
         self.grid_rowconfigure(row_index, weight=1)
         row_index += 1
 
-        # Botón de Gestión de Usuarios (siempre al final)
+        # Botón de Gestión de Usuarios
         if 'access_users' in self.permissions:
             self.settings_button = ttk.Button(self, text="⚙️  Gestión de Usuarios", command=self.app_controller.show_users_view)
-            self.settings_button.grid(row=row_index, column=0, sticky="ew", pady=10)
+            self.settings_button.grid(row=row_index, column=0, sticky="ew", pady=(2,10))
+            row_index += 1
+
+        # Botón de Cerrar Sesión (siempre al final)
+        self.logout_button = ttk.Button(self, text="↩️  Cerrar Sesión", command=self.logout_command)
+        self.logout_button.grid(row=row_index, column=0, sticky="ew", pady=(5,0))

@@ -5,7 +5,7 @@ import sv_ttk
 
 # Importaciones de la aplicación
 from database import get_db_connection
-from auth import verify_and_get_user # ACTUALIZADO
+from auth import verify_and_get_user
 
 # Vistas
 from views.products_view import ProductsView
@@ -34,10 +34,10 @@ from modules.users.user_controller import UserController
 from modules.dashboard.dashboard_controller import DashboardController
 from modules.sales_history.sales_history_controller import SalesHistoryController
 
-
 class LoginWindow(tk.Tk):
-    def __init__(self):
+    def __init__(self, on_success_callback):
         super().__init__()
+        self.on_success = on_success_callback
         sv_ttk.set_theme("dark")
         self.title("Iniciar Sesión"); self.geometry("300x180"); self.resizable(False, False)
         self.create_widgets(); self.center_window()
@@ -63,19 +63,18 @@ class LoginWindow(tk.Tk):
         user_data = verify_and_get_user(username, password)
         if user_data:
             self.destroy()
-            main_app = App(user_data=user_data)
-            main_app.mainloop()
+            self.on_success(user_data)
         else:
             messagebox.showerror("Error", "Usuario o contraseña incorrectos.")
 
-
 class App(tk.Tk):
-    def __init__(self, user_data):
+    def __init__(self, user_data, on_logout_callback):
         super().__init__()
         self.user_data = user_data
         self.user_id = user_data.get('id')
         self.user_role = user_data.get('id_rol')
         self.user_permissions = user_data.get('permissions', [])
+        self.on_logout = on_logout_callback
         
         sv_ttk.set_theme("dark")
         self.title("Electro-Pro: Sistema de Gestión"); self.geometry("1280x720"); self.minsize(1100, 650)
@@ -85,7 +84,7 @@ class App(tk.Tk):
         self.show_dashboard_view()
 
     def create_views(self):
-        self.navigation_view = NavigationView(self, self, self.user_permissions)
+        self.navigation_view = NavigationView(self, self, self.user_permissions, self.logout)
         self.navigation_view.grid(row=0, column=0, sticky="nsw")
         self.main_content_frame = ttk.Frame(self)
         self.main_content_frame.grid(row=0, column=1, sticky="nsew")
@@ -121,6 +120,10 @@ class App(tk.Tk):
         view_to_show = self.views.get(view_name)
         if view_to_show: view_to_show.grid(row=0, column=0, sticky="nsew")
 
+    def logout(self):
+        self.destroy()
+        self.on_logout()
+
     def show_dashboard_view(self):
         self.show_view('dashboard'); self.controllers['dashboard'].load_data()
     def show_inventory_view(self):
@@ -144,6 +147,14 @@ class App(tk.Tk):
     def show_sales_history_view(self):
         self.show_view('sales_history'); self.controllers['sales_history'].load_sales_history()
 
-if __name__ == "__main__":
-    login_window = LoginWindow()
+def start_application():
+    """Función que maneja el ciclo de login/logout."""
+    def run_main_app(user_data):
+        app = App(user_data, on_logout_callback=start_application)
+        app.mainloop()
+
+    login_window = LoginWindow(on_success_callback=run_main_app)
     login_window.mainloop()
+
+if __name__ == "__main__":
+    start_application()
